@@ -18,7 +18,7 @@
   <style>
     /* Print-specific styles optimized for A4 Landscape handwriting/lamination */
     @media print {
-      @page { size: A4 landscape; margin: 12mm; }
+      @page { size: A4 landscape; margin: 10mm; }
       body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none !important; }
       
@@ -27,6 +27,16 @@
       .print-border-cell { border: 1px solid black !important; }
       .print-text-black { color: black !important; }
       .print-bg-gray { background-color: #f3f4f6 !important; }
+      
+      /* Table scaling fixes for 31 days to fit on one page */
+      table { table-layout: fixed !important; width: 100% !important; max-width: 100% !important; }
+      
+      /* Force exactly equal column widths in print so 1-9 don't shrink */
+      .print-col-name { width: 15% !important; }
+      .print-col-date { width: 2.74% !important; } /* 85% / 31 days */
+      
+      .print-col-item { width: 25% !important; }
+      .print-col-day { width: 15% !important; } /* 75% / 5 days */
       
       /* Ensure inputs print seamlessly as text */
       input { border: none !important; background: transparent !important; color: black !important; }
@@ -199,106 +209,126 @@
 
             {/* Tables */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-max bg-white">
+              <table className="w-full text-left border-collapse min-w-max bg-white print:min-w-full print:table-fixed">
                 
+                {/* Colgroup explicitly overrides the browser's attempt to shrink column 1 compared to 10
+                  by dictating absolute equal distribution widths for all columns.
+                */}
+                <colgroup>
+                  {activeMainTab === 'attendance' ? (
+                    <>
+                      <col className="w-32 sm:w-48 print-col-name" />
+                      {operatingDates.map(date => <col key={date} className="print-col-date" />)}
+                      <col className="w-16 no-print" />
+                    </>
+                  ) : (
+                    <>
+                      <col className="w-48 sm:w-64 print-col-item" />
+                      {weekDays.map(day => <col key={day} className="print-col-day" />)}
+                    </>
+                  )}
+                </colgroup>
+
                 {/* Headers */}
                 <thead>
                   {activeMainTab === 'attendance' ? (
                     <tr>
-                      <th className="sticky left-0 z-10 bg-gray-100 print-bg-gray p-3 border-b-2 border-r-2 border-gray-400 print-border-cell font-bold text-gray-800 w-48 print:shadow-none shadow-[2px_0_0_0_#9ca3af]">
+                      <th className="sticky left-0 z-10 bg-gray-100 print-bg-gray p-2 sm:p-3 border-b-2 border-r-2 border-gray-400 print-border-cell font-bold text-gray-800 print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af]">
                         名前 (Name)
                       </th>
                       {operatingDates.map(date => (
-                        <th key={date} className="p-1 border-b-2 border-r border-gray-400 print-border-cell text-center min-w-[24px] sm:min-w-[30px]">
-                          <div className="font-bold text-gray-800 print-text-black text-sm sm:text-base">{date}</div>
+                        <th key={date} className="w-8 sm:w-10 min-w-[32px] sm:min-w-[40px] p-0.5 border-b-2 border-r border-gray-400 print-border-cell text-center print:p-0">
+                          <div className="font-bold text-gray-800 print-text-black text-[11px] sm:text-base">{date}</div>
                         </th>
                       ))}
-                      <th className="p-3 border-b-2 border-gray-400 font-semibold text-gray-700 text-center no-print w-16">操作</th>
+                      <th className="p-3 border-b-2 border-gray-400 font-semibold text-gray-700 text-center no-print">操作</th>
                     </tr>
                   ) : (
-                    <React.Fragment>
-                      <tr>
-                        <th rowSpan="2" className="sticky left-0 z-10 bg-gray-100 print-bg-gray p-3 border-b-2 border-r-2 border-gray-400 print-border-cell font-bold text-gray-800 w-48 align-bottom print:shadow-none shadow-[2px_0_0_0_#9ca3af]">
-                          名前 (Name)
+                    <tr>
+                      <th className="sticky left-0 z-10 bg-gray-100 print-bg-gray p-3 sm:p-4 border-b-2 border-r-2 border-gray-400 print-border-cell font-bold text-gray-800 print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af]">
+                        項目 (Item)
+                      </th>
+                      {weekDays.map(day => (
+                        <th key={day} className="p-3 sm:p-4 border-b-2 border-r-2 border-gray-400 print-border-cell text-center font-bold text-gray-800 print-text-black bg-gray-50 print-bg-gray text-xl sm:text-2xl">
+                          {day}
                         </th>
-                        {weekDays.map(day => (
-                          <th key={day} colSpan="2" className="p-2 border-b-2 border-r-2 border-gray-400 print-border-cell text-center font-bold text-gray-800 print-text-black bg-gray-50 print-bg-gray text-lg">
-                            {day}
-                          </th>
-                        ))}
-                        <th rowSpan="2" className="p-3 border-b-2 border-gray-400 font-semibold text-gray-700 text-center no-print w-16 align-bottom">操作</th>
-                      </tr>
-                      <tr>
-                        {weekDays.map(day => (
-                          <React.Fragment key={`${day}-sub`}>
-                            <th className="py-2 border-b-2 border-r border-gray-400 print-border-cell text-center text-sm font-bold text-gray-700 print-text-black w-16">出</th>
-                            <th className="py-2 border-b-2 border-r-2 border-gray-400 print-border-cell text-center text-sm font-bold text-gray-700 print-text-black w-16">戻</th>
-                          </React.Fragment>
-                        ))}
-                      </tr>
-                    </React.Fragment>
+                      ))}
+                    </tr>
                   )}
                 </thead>
 
                 {/* Body */}
                 <tbody>
-                  {currentStudents.map((student, index) => (
-                    <tr key={student.id}>
-                      
-                      {/* Name Input */}
-                      <td className="sticky left-0 z-10 bg-white print:bg-white p-0 border-b border-r-2 border-gray-400 print-border-cell print:shadow-none shadow-[2px_0_0_0_#9ca3af]">
-                        <input
-                          type="text"
-                          value={student.name}
-                          onChange={(e) => handleNameChange(activeMainTab === 'attendance' ? activeProgram : activeOutsideProgram, student.id, e.target.value)}
-                          placeholder={`生徒 ${index + 1}`}
-                          className="w-full h-14 sm:h-16 p-3 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-blue-500 outline-none font-medium text-gray-900 print-text-black placeholder:text-gray-300 print:placeholder-transparent text-lg"
-                        />
-                      </td>
+                  {activeMainTab === 'attendance' ? (
+                    currentStudents.map((student, index) => (
+                      <tr key={student.id}>
+                        
+                        {/* Name Input */}
+                        <td className="sticky left-0 z-10 bg-white print:bg-white p-0 border-b border-r-2 border-gray-400 print-border-cell print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af]">
+                          <input
+                            type="text"
+                            value={student.name}
+                            onChange={(e) => handleNameChange(activeProgram, student.id, e.target.value)}
+                            placeholder={`生徒 ${index + 1}`}
+                            className="w-full h-8 sm:h-10 p-2 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-blue-500 outline-none font-medium text-gray-900 print-text-black placeholder:text-gray-300 print:placeholder-transparent text-sm sm:text-base"
+                          />
+                        </td>
 
-                      {/* Blank Spaces for Analog Handwriting */}
-                      {activeMainTab === 'attendance' ? (
-                        operatingDates.map(date => (
+                        {/* Blank Spaces for Analog Handwriting */}
+                        {operatingDates.map(date => (
                           <td 
                             key={date} 
-                            className="p-0 border-b border-r border-gray-400 print-border-cell h-14 sm:h-16"
+                            className="p-0 border-b border-r border-gray-400 print-border-cell h-8 sm:h-10"
                           ></td>
-                        ))
-                      ) : (
-                        weekDays.map(day => (
-                          <React.Fragment key={`${student.id}-${day}`}>
-                            <td className="p-0 border-b border-r border-gray-400 print-border-cell h-14 sm:h-16"></td>
-                            <td className="p-0 border-b border-r-2 border-gray-400 print-border-cell h-14 sm:h-16"></td>
-                          </React.Fragment>
-                        ))
-                      )}
+                        ))}
 
-                      {/* Delete Action (Screen Only) */}
-                      <td className="p-2 border-b border-gray-400 text-center no-print">
-                        <button
-                          onClick={() => removeStudent(activeMainTab === 'attendance' ? activeProgram : activeOutsideProgram, student.id)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                          title="生徒を削除 (Remove student)"
-                        >
-                          <Trash2Icon className="w-5 h-5 mx-auto" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        {/* Delete Action (Screen Only) */}
+                        <td className="p-2 border-b border-gray-400 text-center no-print">
+                          <button
+                            onClick={() => removeStudent(activeProgram, student.id)}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                            title="生徒を削除 (Remove student)"
+                          >
+                            <Trash2Icon className="w-5 h-5 mx-auto" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    [
+                      { key: 'out', jp: '出発時の人数', en: 'Number Out' },
+                      { key: 'arrive', jp: '公園到着時の人数', en: 'Number Arrived' },
+                      { key: 'leave', jp: '公園出発時の人数', en: 'Number Left' },
+                      { key: 'in', jp: '戻り時の人数', en: 'Number In' },
+                      { key: 'pic', jp: '写真撮影', en: 'Picture Taken' },
+                    ].map(row => (
+                      <tr key={row.key}>
+                        <td className="sticky left-0 z-10 bg-white print:bg-white p-3 sm:p-4 border-b-2 border-r-2 border-gray-400 print-border-cell print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af] align-middle">
+                          <div className="font-bold text-gray-800 text-base sm:text-lg print-text-black">{row.jp}</div>
+                          <div className="font-semibold text-gray-600 text-[13px] sm:text-base print-text-black mt-0.5">{row.en}</div>
+                        </td>
+                        {weekDays.map(day => (
+                          <td key={`${row.key}-${day}`} className="p-0 border-b-2 border-r-2 border-gray-400 print-border-cell h-16 sm:h-20 print:h-20"></td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
-            {/* Add Student Button */}
-            <div className="p-4 border-t-2 border-gray-400 bg-white no-print">
-              <button
-                onClick={() => addStudent(activeMainTab === 'attendance' ? activeProgram : activeOutsideProgram)}
-                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium px-3 py-2 rounded-md hover:bg-blue-50 transition-colors"
-              >
-                <UserPlusIcon className="w-4 h-4" />
-                生徒を追加 (Add Student Row)
-              </button>
-            </div>
+            {/* Add Student Button (Only for Attendance Tab) */}
+            {activeMainTab === 'attendance' && (
+              <div className="p-4 border-t-2 border-gray-400 bg-white no-print">
+                <button
+                  onClick={() => addStudent(activeProgram)}
+                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium px-3 py-2 rounded-md hover:bg-blue-50 transition-colors"
+                >
+                  <UserPlusIcon className="w-4 h-4" />
+                  生徒を追加 (Add Student Row)
+                </button>
+              </div>
+            )}
           </div>
         </div>
       );
