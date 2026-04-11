@@ -30,13 +30,11 @@
       
       /* Table scaling fixes for 31 days to fit on one page */
       table { table-layout: fixed !important; width: 100% !important; max-width: 100% !important; }
+      th, td { min-width: 0 !important; } /* Overrides minimum widths to prevent page spill */
       
       /* Force exactly equal column widths in print so 1-9 don't shrink */
       .print-col-name { width: 15% !important; }
       .print-col-date { width: 2.74% !important; } /* 85% / 31 days */
-      
-      .print-col-item { width: 25% !important; }
-      .print-col-day { width: 15% !important; } /* 75% / 5 days */
       
       /* Ensure inputs print seamlessly as text */
       input { border: none !important; background: transparent !important; color: black !important; }
@@ -164,7 +162,8 @@
                     </>
                   ) : (
                     <>
-                      <span>週 (Week of):</span> <span className="inline-block w-48 border-b border-gray-800 print:border-black mb-1"></span> 
+                      <span>年 (Year):</span> <span className="inline-block w-16 border-b border-gray-800 print:border-black mb-1"></span> 
+                      <span className="ml-2">月 (Month):</span> <span className="inline-block w-12 border-b border-gray-800 print:border-black mb-1"></span> 
                       <span className="ml-2">| {activeOutsideProgram === 'intl' ? 'International School' : 'After School'}</span>
                     </>
                   )}
@@ -215,42 +214,33 @@
                   by dictating absolute equal distribution widths for all columns.
                 */}
                 <colgroup>
-                  {activeMainTab === 'attendance' ? (
-                    <>
-                      <col className="w-32 sm:w-48 print-col-name" />
-                      {operatingDates.map(date => <col key={date} className="print-col-date" />)}
-                      <col className="w-16 no-print" />
-                    </>
-                  ) : (
-                    <>
-                      <col className="w-48 sm:w-64 print-col-item" />
-                      {weekDays.map(day => <col key={day} className="print-col-day" />)}
-                    </>
-                  )}
+                  <col className="w-32 sm:w-48 print-col-name" />
+                  {operatingDates.map(date => <col key={date} className="print-col-date" />)}
+                  {activeMainTab === 'attendance' && <col className="w-16 no-print" />}
                 </colgroup>
 
                 {/* Headers */}
                 <thead>
                   {activeMainTab === 'attendance' ? (
                     <tr>
-                      <th className="sticky left-0 z-10 bg-gray-100 print-bg-gray p-2 sm:p-3 border-b-2 border-r-2 border-gray-400 print-border-cell font-bold text-gray-800 print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af]">
+                      <th className="sticky left-0 z-10 bg-gray-100 print-bg-gray p-2 sm:p-3 border-b-2 border-r-2 border-gray-400 print-border-cell font-bold text-gray-800 print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af] print:text-sm">
                         名前 (Name)
                       </th>
                       {operatingDates.map(date => (
                         <th key={date} className="w-8 sm:w-10 min-w-[32px] sm:min-w-[40px] p-0.5 border-b-2 border-r border-gray-400 print-border-cell text-center print:p-0">
-                          <div className="font-bold text-gray-800 print-text-black text-[11px] sm:text-base">{date}</div>
+                          <div className="font-bold text-gray-800 print-text-black text-[11px] sm:text-base print:text-xs">{date}</div>
                         </th>
                       ))}
                       <th className="p-3 border-b-2 border-gray-400 font-semibold text-gray-700 text-center no-print">操作</th>
                     </tr>
                   ) : (
                     <tr>
-                      <th className="sticky left-0 z-10 bg-gray-100 print-bg-gray p-3 sm:p-4 border-b-2 border-r-2 border-gray-400 print-border-cell font-bold text-gray-800 print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af]">
+                      <th className="sticky left-0 z-10 bg-gray-100 print-bg-gray p-2 sm:p-3 border-b-2 border-r-2 border-gray-400 print-border-cell font-bold text-gray-800 print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af] print:text-sm">
                         項目 (Item)
                       </th>
-                      {weekDays.map(day => (
-                        <th key={day} className="p-3 sm:p-4 border-b-2 border-r-2 border-gray-400 print-border-cell text-center font-bold text-gray-800 print-text-black bg-gray-50 print-bg-gray text-xl sm:text-2xl">
-                          {day}
+                      {operatingDates.map(date => (
+                        <th key={date} className="w-8 sm:w-10 min-w-[32px] sm:min-w-[40px] p-0.5 border-b-2 border-r border-gray-400 print-border-cell text-center print:p-0">
+                          <div className="font-bold text-gray-800 print-text-black text-[11px] sm:text-base print:text-xs">{date}</div>
                         </th>
                       ))}
                     </tr>
@@ -270,7 +260,7 @@
                             value={student.name}
                             onChange={(e) => handleNameChange(activeProgram, student.id, e.target.value)}
                             placeholder={`生徒 ${index + 1}`}
-                            className="w-full h-8 sm:h-10 p-2 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-blue-500 outline-none font-medium text-gray-900 print-text-black placeholder:text-gray-300 print:placeholder-transparent text-sm sm:text-base"
+                            className="w-full h-8 sm:h-10 print:h-8 p-2 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-blue-500 outline-none font-medium text-gray-900 print-text-black placeholder:text-gray-300 print:placeholder-transparent text-sm sm:text-base print:text-sm"
                           />
                         </td>
 
@@ -278,7 +268,7 @@
                         {operatingDates.map(date => (
                           <td 
                             key={date} 
-                            className="p-0 border-b border-r border-gray-400 print-border-cell h-8 sm:h-10"
+                            className="p-0 border-b border-r border-gray-400 print-border-cell h-8 sm:h-10 print:h-8"
                           ></td>
                         ))}
 
@@ -303,12 +293,12 @@
                       { key: 'pic', jp: '写真撮影', en: 'Picture Taken' },
                     ].map(row => (
                       <tr key={row.key}>
-                        <td className="sticky left-0 z-10 bg-white print:bg-white p-3 sm:p-4 border-b-2 border-r-2 border-gray-400 print-border-cell print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af] align-middle">
-                          <div className="font-bold text-gray-800 text-base sm:text-lg print-text-black">{row.jp}</div>
-                          <div className="font-semibold text-gray-600 text-[13px] sm:text-base print-text-black mt-0.5">{row.en}</div>
+                        <td className="sticky left-0 z-10 bg-white print:bg-white p-2 sm:p-3 border-b-2 border-r-2 border-gray-400 print-border-cell print:static print:shadow-none shadow-[2px_0_0_0_#9ca3af] align-middle">
+                          <div className="font-bold text-gray-800 text-sm sm:text-base print:text-[13px] print-text-black leading-tight">{row.jp}</div>
+                          <div className="font-semibold text-gray-600 text-[10px] sm:text-[12px] print:text-[10px] print-text-black mt-1 leading-none">{row.en}</div>
                         </td>
-                        {weekDays.map(day => (
-                          <td key={`${row.key}-${day}`} className="p-0 border-b-2 border-r-2 border-gray-400 print-border-cell h-16 sm:h-20 print:h-20"></td>
+                        {operatingDates.map(date => (
+                          <td key={`${row.key}-${date}`} className="p-0 border-b border-r border-gray-400 print-border-cell h-14 sm:h-20 print:h-16"></td>
                         ))}
                       </tr>
                     ))
