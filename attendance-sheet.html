@@ -52,7 +52,7 @@
     const App = () => {
       // --- STATE ---
       const [activeMainTab, setActiveMainTab] = useState('attendance');
-      const [activeProgram, setActiveProgram] = useState('fun');
+      const [activeProgram, setActiveProgram] = useState('intl'); // Defaulting to intl
       const [activeOutsideProgram, setActiveOutsideProgram] = useState('intl');
 
       // Initializing default rows
@@ -215,7 +215,7 @@
                 </h1>
                 <p className="text-gray-500 mt-1 print-text-black text-sm flex items-center gap-4">
                   {activeMainTab === 'attendance' ? (
-                    <>2026年 4月 | {activeProgram === 'fun' ? 'Fun English' : 'Step English'}</>
+                    <>2026年 4月 | {activeProgram === 'intl' ? 'International School' : activeProgram === 'fun' ? 'Fun English' : 'Step English'}</>
                   ) : (
                     <>
                       週 (Week of): <span className="inline-block w-32 border-b border-gray-400"></span> 
@@ -230,6 +230,7 @@
                 <div className="flex bg-gray-100 p-1 rounded-lg">
                   {activeMainTab === 'attendance' ? (
                     <>
+                      <button onClick={() => setActiveProgram('intl')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'intl' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>International School</button>
                       <button onClick={() => setActiveProgram('fun')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'fun' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Fun English</button>
                       <button onClick={() => setActiveProgram('step')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'step' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Step English</button>
                     </>
