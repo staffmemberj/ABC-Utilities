@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABC Garden Smart Lesson Planner</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    @media print {
+      @page { 
+        size: portrait A4; 
+        margin: 10mm 10mm 15mm 10mm; 
+        @bottom-center {
+          content: counter(page) "/" counter(pages);
+          font-family: sans-serif;
+          font-size: 10pt;
+          color: black;
+        }
+      }
+      body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .print-border { border: 2px solid black !important; }
+      .print-border-cell { border: 1px solid black !important; }
+      .print-text-black { color: black !important; }
+      .print-bg-gray { background-color: #f3f4f6 !important; }
+      .print-bg-holiday { background-color: #e5e7eb !important; }
+      
+      table { table-layout: fixed !important; width: 100% !important; max-width: 100% !important; }
+      thead { display: table-header-group; }
+      th, td { word-wrap: break-word !important; overflow-wrap: break-word !important; white-space: normal !important; }
+      tbody tr:last-child td { border-bottom: none !important; }
+      
+      /* Prevent rows from breaking across pages */
+      tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+      
+      /* Clone borders and rounded corners cleanly across page breaks */
+      .print-wrapper { 
+        border-radius: 0.75rem !important; 
+        -webkit-box-decoration-break: clone !important; 
+        box-decoration-break: clone !important; 
+      }
+      .print-break-after { page-break-after: always !important; break-after: page !important; }
+      .print-avoid-break { page-break-inside: avoid !important; break-inside: avoid !important; }
+      
+      .shadow-sm, .shadow-md { box-shadow: none !important; }
+      
+      select, input[type="text"], textarea {
+        appearance: none;
+        -webkit-appearance: none;
+        border: none !important;
+        background: transparent !important;
+        color: black !important;
+        padding: 0 !important;
+        font-weight: bold;
+        width: 100%;
+        white-space: normal;
+      }
+      input::placeholder, textarea::placeholder { color: transparent !important; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+
+    const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+
+    // --- ICONS ---
+    const CalendarIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>;
+    const DatabaseIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>;
+    const PrinterIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>;
+    const DownloadIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
+    const ShuffleIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 3 21 3 21 8"/><line x1="4" x2="21" y1="20" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" x2="21" y1="15" y2="21"/><line x1="4" x2="9" y1="4" y2="9"/></svg>;
+    const UsersIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    const Trash2Icon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
+    const BookIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>;
+    const ZapIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+    const XIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>;
+    const PlusCircleIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="16"/><line x1="8" x2="16" y1="12" y2="12"/></svg>;
+    const PalmtreeIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4"/><path d="M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3"/><path d="M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35z"/><path d="M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/></svg>;
+    const SearchIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
+
+    // --- DYNAMIC TEXT FORMATTER ---
+    const formatDescription = (desc, targets) => {
+      if (!desc) return '';
+      let formatted = desc;
+      
+      const v = targets.vocab ? `"${targets.vocab}"` : '[Target Vocab]';
+      const s = targets.sentences ? `"${targets.sentences}"` : '[Target Sentences]';
+      const p = targets.phonics ? `"${targets.phonics}"` : '[Target Phonics]';
+
+      formatted = formatted.replace(/\{\{vocab\}\}/gi, v);
+      formatted = formatted.replace(/\{\{sentence\}\}/gi, s);
+      formatted = formatted.replace(/\{\{phonics\}\}/gi, p);
+      
+      return formatted;
+    };
+
+    const weekDays = ['月', '火', '水', '木', '金'];
+    const categories = ['Warm-up', 'Song/Chant', 'Conversation', 'Vocabulary', 'Structure', 'Phonics', 'Desk Work', 'Wrap-up'];
+
+    // --- CURRICULUM LOGIC ---
+    const programConfig = {
+      intl: {
+        name: 'International School',
+        duration: 'Hello Meeting (30 min)',
+        blocks: [
+          { id: 'i1', label: 'Warm-up & Routine (5m)', allowedTypes: ['Warm-up'] },
+          { id: 'i2', label: 'Model & Action (15m)', allowedTypes: ['Vocabulary', 'Phonics', 'Structure'] },
+          { id: 'i3', label: 'Talk & Play (10m)', allowedTypes: ['Conversation', 'Song/Chant'] }
+        ]
+      },
+      fun: {
+        name: 'Fun English',
+        duration: 'Speaking & Listening (50 min)',
+        blocks: [
+          { id: 'f1', label: 'Warm-up & Review (5m)', allowedTypes: ['Warm-up'] },
+          { id: 'f2', label: 'Model: Present Targets (15m)', allowedTypes: ['Vocabulary', 'Structure'] },
+          { id: 'f3', label: 'Action: Class Drills (10m)', allowedTypes: ['Vocabulary', 'Structure'] },
+          { id: 'f4', label: 'Talk: Pair/Group Work (15m)', allowedTypes: ['Conversation'] },
+          { id: 'f5', label: 'Song & Wrap-up (5m)', allowedTypes: ['Song/Chant', 'Wrap-up'] }
+        ]
+      },
+      step: {
+        name: 'Step English',
+        duration: 'Reading & Writing Focus (50 min)',
+        blocks: [
+          { id: 's1', label: 'Warm-up & Review (5m)', allowedTypes: ['Warm-up'] },
+          { id: 's2', label: 'Model: Phonics/Vocab (15m)', allowedTypes: ['Phonics', 'Vocabulary'] },
+          { id: 's3', label: 'Action: Drills (10m)', allowedTypes: ['Structure', 'Phonics'] },
+          { id: 's4', label: 'Desk Work & Reading (15m)', allowedTypes: ['Desk Work'] },
+          { id: 's5', label: 'Wrap-up (5m)', allowedTypes: ['Wrap-up'] }
+        ]
+      }
+    };
+
+    // --- FULL DATABASE OF LESSONS ---
+    const curriculumSets = {
+      "lb1": {
+        name: "Let's Begin 1",
+        units: [
+          { id: 1, vocab: "Andy, ant, alligator, apple", sentences: "Hi, Andy! Hello!", phonics: "Aa" },
+          { id: 2, vocab: "Andy, ant, alligator, apple", sentences: "What's your name? I'm Eddie.", phonics: "Aa" },
+          { id: 3, vocab: "Eddie, elbow, egg, elephant, Isabel, ink, igloo, insect", sentences: "Hi! How are you? I'm fine.", phonics: "Ee, Ii" },
+          { id: 4, vocab: "Oliver, octopus, omelet, ostrich, book, ball, jump rope, doll", sentences: "What is it? It's a ball.", phonics: "Oo" },
+          { id: 5, vocab: "Uncle Jim, umpire, umbrella, upside down, balloon, bicycle, cap, bat", sentences: "What is it? It's a balloon.", phonics: "Uu" },
+          { id: 6, vocab: "Carol, car, cat, candy, 1, 2, 3, 4, 5", sentences: "Let's count! OK! 1!", phonics: "Cc" },
+          { id: 7, vocab: "Gail, girl, gorilla, game, 6, 7, 8, 9, 10", sentences: "Let's count! OK! 6!", phonics: "Gg" },
+          { id: 8, vocab: "Beth, boy, bird, bag", sentences: "How many? 7!", phonics: "Bb" },
+          { id: 9, vocab: "boy, bird, bag, car, cat, candy, girl, gorilla, game", sentences: "How old are you? I'm 7.", phonics: "Bb, Cc, Gg Review" },
+          { id: 10, vocab: "David, dog, desk, dinosaur, Peter, peach, pencil, picture, eggs, pencils, pictures, peaches", sentences: "What are they? They're eggs. (Plurals)", phonics: "Dd, Pp" },
+          { id: 11, vocab: "Tom, table, telephone, TV, cars, apples, dinosaurs, books", sentences: "What are they? They're cars. (Plurals)", phonics: "Tt" },
+          { id: 12, vocab: "Vicky, volcano, vest, violin, red, blue, yellow, green, orange", sentences: "What color is it? It's blue.", phonics: "Vv" },
+          { id: 13, vocab: "Zack, zebra, zero, zipper, pink, purple, black, brown, white", sentences: "What color is it? It's purple.", phonics: "Zz" },
+          { id: 14, vocab: "Fay, finger, foot, fan, circle, square, triangle, rectangle", sentences: "What shape is it? It's a circle.", phonics: "Ff" },
+          { id: 15, vocab: "Luke, lamb, lemon, lion, star, diamond, heart, oval", sentences: "What shape is it? It's a star.", phonics: "Ll" },
+          { id: 16, vocab: "Mary, moon, man, monkey", sentences: "Good morning! Good night!", phonics: "Mm" },
+          { id: 17, vocab: "Nina, nut, notebook, nest", sentences: "Thank you! You're welcome.", phonics: "Nn" },
+          { id: 18, vocab: "Scott, sandwich, seesaw, sun, body, head, face, mouth", sentences: "This is my body.", phonics: "Ss" },
+          { id: 19, vocab: "Mr. X, X-ray, box, fox, eyes, ears, nose, fingers", sentences: "These are my eyes. This is my nose.", phonics: "Xx" },
+          { id: 20, vocab: "Jenny, jam, juice, jet, arms, hands, legs, feet", sentences: "These are my arms.", phonics: "Jj" },
+          { id: 21, vocab: "Kate, kitten, kite, kangaroo, left, right, hand, foot", sentences: "This is my left hand. This is my right foot.", phonics: "Kk" },
+          { id: 22, vocab: "Henry, hat, horse, house, shoulders, elbows, knees, toes", sentences: "Touch your shoulders.", phonics: "Hh" },
+          { id: 23, vocab: "Quinn, queen, quilt, question, knee, nose, head", sentences: "Ouch! I hurt my knee.", phonics: "Qq" },
+          { id: 24, vocab: "Roger, rocket, rabbit, radio, up, down, turn around, in, out", sentences: "Let's go! OK!", phonics: "Rr" },
+          { id: 25, vocab: "Wendy, water, watch, woman, run, skip, walk, jump", sentences: "I can run.", phonics: "Ww" },
+          { id: 26, vocab: "Yolanda, yak, yarn, yo-yo, swim, hop, dance, sing", sentences: "I can swim.", phonics: "Yy" },
+          { id: 27, vocab: "Alphabet Review (Aa-Zz)", sentences: "Goodbye! See you later!", phonics: "Aa-Zz" },
+          { id: 28, vocab: "Alphabet Review (Aa-Zz)", sentences: "Goodbye! See you later!", phonics: "Aa-Zz" }
+        ]
+      },
+      "lb2": {
+        name: "Let's Begin 2",
+        units: [
+          { id: 1, vocab: "ball, jump rope, yo-yo, bicycle, train, car, doll, teddy bear, apple, ant, bird, cat, dog", sentences: "What's your name? I'm Kate. / What is it? It's a yo-yo.", phonics: "Aa-Dd" },
+          { id: 2, vocab: "red, blue, yellow, green, brown, purple, orange, pink, black, white, egg, elephant, fish, farm, gorilla, goat, heart, house", sentences: "Hi, boys and girls. / What color is it? It's purple.", phonics: "Ee-Hh" },
+          { id: 3, vocab: "circle, square, triangle, heart, star, diamond, oval, rectangle, igloo, iguana, jump rope, jeans, kangaroo, kite, lion, ladybug", sentences: "How are you today? I'm fine. / Is it a star? Yes, it is.", phonics: "Ii-Ll" },
+          { id: 4, vocab: "Numbers 1-10, moon, monkey, nest, net, octopus, ostrich, panda, popcorn", sentences: "May I come in? Sure! / How many cats? 6 cats.", phonics: "Mm-Pp" },
+          { id: 5, vocab: "dog, cat, bird, cow, rabbit, duck, (plurals), queen, quilt, rock, sun, sandwich, tiger, teapot", sentences: "Here you are. Thank you. / How many cows? 8 cows.", phonics: "Qq-Tt" },
+          { id: 6, vocab: "ice cream, pizza, cake, chicken, milk, fish, bread, rice, umbrella, up, violin, vest, watch, water", sentences: "How old are you? I'm 6. / Do you like fish? Yes, I do.", phonics: "Uu-Ww" },
+          { id: 7, vocab: "head, shoulders, knees, toes, eyes, ears, mouth, nose, fox, box, yarn, yak, zebra, zero", sentences: "Oops! I'm sorry! That's OK. / What can you do? I can touch my eyes.", phonics: "Xx-Zz" },
+          { id: 8, vocab: "ride a bicycle, sing a song, fly a kite, bounce a ball, swim, smile, wink, dance", sentences: "Let's play. OK. / Can you dance? Yes, I can.", phonics: "Aa-Zz Review" }
+        ]
+      }
+    };
+
+    // --- 70+ DRILLS & GAMES REPOSITORY ---
+    const initialRepository = [
+      // WARM-UPS
+      { id: 'wu1', name: 'Hello Song & Weather', category: 'Warm-up', min: 1, max: 12, unit: 'all', materials: 'Tablet (Audio/Video - Hello Song), Weather Cards', goal: 'Establish routine.', description: 'Sing the Hello Song together. Ask "How is the weather today?" and have students place the correct weather card on the board.' },
+      { id: 'wu2', name: 'Six-Second Drill', category: 'Warm-up', min: 1, max: 12, unit: 'all', materials: '', goal: 'Fast-paced repetition and focus.', description: 'Model a sentence ({{sentence}}) 3 times. Have students repeat it 3 times quickly, then raise their hands and yell "Finished!". Add actions (e.g., tap head, stand up).' },
+      { id: 'wu3', name: '1, 2, 3, Finished!', category: 'Warm-up', min: 2, max: 12, unit: 'all', materials: '', goal: 'Speed drilling in pairs.', description: 'Pairs take turns asking and answering a target question (e.g., {{sentence}}). The first pair to ask and answer 3 questions sits down and shouts "Finished!".' },
+      { id: 'wu4', name: 'Command Chain', category: 'Warm-up', min: 2, max: 12, unit: 'all', materials: '', goal: 'Listen and do actions.', description: 'Students sit in a circle. S1 says and does an action using {{vocab}}. S2 repeats S1\'s action and adds a new one. Continue the chain.' },
+      { id: 'wu5', name: 'Do It!', category: 'Warm-up', min: 1, max: 12, unit: 'all', materials: '', goal: 'Action and numbers review.', description: 'Give a command based on {{vocab}} and a number (1-10). Students do the action and say it that many times. (e.g., "Jump 3 times!" -> "Jump, jump, jump!")' },
+      { id: 'wu6', name: 'Follow the Leader', category: 'Warm-up', min: 2, max: 12, unit: 'all', materials: '', goal: 'Physical response to verbs.', description: 'A student leader says a sentence like {{sentence}} using {{vocab}}. Students repeat and do the action. The leader strings 3 actions together.' },
+      { id: 'wu7', name: 'Please', category: 'Warm-up', min: 1, max: 12, unit: 'all', materials: '', goal: 'Listening discrimination.', description: 'Give commands (incorporating {{vocab}}) at random. If you say "Please" before the command, students do it. If you don\'t say "Please", they must freeze.' },
+      { id: 'wu8', name: 'Rhythm Circle', category: 'Warm-up', min: 2, max: 12, unit: 'all', materials: '', goal: 'Cadence and vocabulary recall.', description: 'Slap hands on knees twice, clap twice. Keep the rhythm while going around the circle saying {{vocab}} or {{sentence}} words.' },
+
+      // SONGS / CHANTS
+      { id: 'sc1', name: 'Target Unit Chant', category: 'Song/Chant', min: 1, max: 12, unit: 'all', materials: 'Tablet (Audio/Video - {{phonics}} Chant)', goal: 'Phonemic awareness and rhythm.', description: 'Play the {{phonics}} phonics chant on the tablet. Model the gestures and have students chant along while clapping to keep the beat.' },
+      { id: 'sc2', name: 'The Alphabet Song', category: 'Song/Chant', min: 1, max: 12, unit: 'all', materials: 'Tablet (Audio/Video - Alphabet Song)', goal: 'Alphabet sequence.', description: 'Play the Alphabet Song. Students point to the letters on the board or in their books as they sing along, focusing on {{phonics}}.' },
+      { id: 'sc3', name: 'Our Chant', category: 'Song/Chant', min: 1, max: 12, unit: 'all', materials: '', goal: 'Creative rhythm practice.', description: 'Start a basic rhythm (tap, tap, clap). Have students fit the target dialogue {{sentence}} or vocabulary {{vocab}} into the beat with appropriate actions.' },
+
+      // CONVERSATION
+      { id: 'c1', name: 'Conversation Lines', category: 'Conversation', min: 4, max: 12, unit: 'all', materials: '', goal: 'One-on-one dialogue practice.', description: 'Two parallel lines facing each other. Partners practice the Q&A: {{sentence}}. One line shifts to the right so everyone gets a new partner. Repeat.' },
+      { id: 'c2', name: 'Step Away Lines', category: 'Conversation', min: 4, max: 12, unit: 'all', materials: '', goal: 'Volume and confidence building.', description: 'Partners face each other in lines. They ask/answer the target question: {{sentence}}. Once successful, they take one giant step back and repeat, speaking louder.' },
+      { id: 'c3', name: 'Beanbag Circle', category: 'Conversation', min: 2, max: 12, unit: 'all', materials: 'Beanbag', goal: 'Listen and respond to questions.', description: 'Students sit in a circle. Ask a question ({{sentence}}) and toss the beanbag to a student. They answer, ask the same question, and toss it to someone else.' },
+      { id: 'c4', name: 'Build a Conversation', category: 'Conversation', min: 2, max: 12, unit: 'all', materials: 'Whiteboard, Markers', goal: 'Natural conversation flow.', description: 'Write the first line of a conversation ({{sentence}}) on the board. Ask students what the next line could be. Build the full dialogue together and role-play it.' },
+      { id: 'c5', name: 'Dialogue Musical Chairs', category: 'Conversation', min: 4, max: 12, unit: 'all', materials: 'Tablet (Audio/Video - Background Music), Chairs', goal: 'Dynamic dialogue mixing.', description: 'Play music. Students walk around. When music stops, they sit. The student without a chair is out. Or, remove two chairs, and the two standing must say {{sentence}} together.' },
+      { id: 'c6', name: 'Role Play', category: 'Conversation', min: 2, max: 12, unit: 'all', materials: '', goal: 'Real-world application.', description: 'Using language students have learned ({{vocab}} / {{sentence}}), create an original conversation. Students practice in pairs and perform for the class using dramatic voices.' },
+
+      // VOCABULARY
+      { id: 'v1', name: 'Find the Hidden Object', category: 'Vocabulary', min: 1, max: 12, unit: 'all', materials: 'Student Books or Posters', goal: 'Target word recognition.', description: 'Ask students to find the hidden object (e.g., from {{vocab}}). Students look at their book/poster, point, and answer "Yes, there is."' },
+      { id: 'v2', name: 'Slap', category: 'Vocabulary', min: 2, max: 12, unit: 'all', materials: 'Picture Cards ({{vocab}})', goal: 'Fast visual recognition.', description: 'Spread flashcards face up. The caller yells a word (from {{vocab}}). Students race to be the first to slap the correct card and say the word.' },
+      { id: 'v3', name: 'Bingo', category: 'Vocabulary', min: 2, max: 12, unit: 'all', materials: 'Student Cards ({{vocab}})', goal: 'Vocabulary memorization.', description: 'Students arrange 9 cards in a 3x3 grid. Call out words ({{vocab}}). Students flip matching cards. First to get 3 in a row wins.' },
+      { id: 'v4', name: 'Charades', category: 'Vocabulary', min: 3, max: 12, unit: 'all', materials: '', goal: 'Express meaning via gestures.', description: 'Whisper a word ({{vocab}}) to a student. They must act it out using gestures without speaking while the rest of the class guesses the word.' },
+      { id: 'v5', name: 'Concentration', category: 'Vocabulary', min: 2, max: 12, unit: 'all', materials: '2 sets of Student Cards ({{vocab}})', goal: 'Memory and matching.', description: 'Place two identical sets of cards face down based on {{vocab}}. Students turn over two at a time, saying the words. If they match, they keep the pair.' },
+      { id: 'v6', name: 'Guessing Game', category: 'Vocabulary', min: 2, max: 12, unit: 'all', materials: 'Handkerchief, Real Objects ({{vocab}})', goal: 'Deduction and recall.', description: 'Place an object under a handkerchief or in a bag. Students guess what it is using target vocab ({{vocab}}). Correct guesses win a point.' },
+      { id: 'v7', name: 'Hidden Pictures', category: 'Vocabulary', min: 2, max: 12, unit: 'all', materials: 'Teacher Cards ({{vocab}}), Number Cards', goal: 'Quick recall.', description: 'Cover 10 Picture Cards ({{vocab}}) with Number Cards. A student chooses a number. Reveal the picture for 3 seconds. If they name it, they win a point.' },
+      { id: 'v8', name: 'Name the Body Part', category: 'Vocabulary', min: 2, max: 12, unit: 'all', materials: '', goal: 'Body vocabulary recall.', description: 'Pairs point to their own body parts (or use {{vocab}}) and name them rapidly. S1 points to head: "Head". S2 points to mouth: "Mouth".' },
+      { id: 'v9', name: 'Picture Game', category: 'Vocabulary', min: 3, max: 12, unit: 'all', materials: 'Whiteboard, Markers', goal: 'Visual vocabulary association.', description: 'Whisper a word ({{vocab}}) to S1. S1 draws the object on the whiteboard. The first student to guess the word correctly wins a point.' },
+      { id: 'v10', name: 'Run to a Card', category: 'Vocabulary', min: 2, max: 12, unit: 'all', materials: 'Teacher Cards ({{vocab}})', goal: 'Physical response to vocab.', description: 'Scatter cards around the room. Say a target word ({{vocab}}). Students run to touch the appropriate card.' },
+      { id: 'v11', name: 'Scramble', category: 'Vocabulary', min: 4, max: 12, unit: 'all', materials: 'Chairs', goal: 'Listening comprehension.', description: 'Assign a vocab word ({{vocab}}) to each student. Call out two words; those students switch seats. Call "Scramble!" and everyone must find a new seat.' },
+      { id: 'v12', name: 'Vocabulary Race', category: 'Vocabulary', min: 2, max: 12, unit: 'all', materials: 'Teacher Cards ({{vocab}})', goal: 'Speed naming.', description: 'Line up cards ({{vocab}}) on the floor. Two students start at opposite ends, touching and saying the words. When they meet, they play Rock-Paper-Scissors.' },
+      { id: 'v13', name: 'Circle Game', category: 'Vocabulary', min: 3, max: 12, unit: 'all', materials: 'Student Cards ({{vocab}})', goal: 'Continuous sentence building.', description: 'Students stand in a circle passing cards. As they pass a card, they must say a sentence with it (incorporating {{vocab}}).' },
+      { id: 'v14', name: 'Line Up Game', category: 'Vocabulary', min: 3, max: 12, unit: 'all', materials: 'Teacher Cards ({{vocab}})', goal: 'Target identification.', description: 'Spread cards on a desk. S1 says "Touch the ({{vocab}})" and everyone races to touch it. Next student becomes the leader.' },
+      { id: 'v15', name: 'Memory Game (Chain)', category: 'Vocabulary', min: 2, max: 12, unit: 'all', materials: '', goal: 'Memory retention.', description: 'S1 says a word (from {{vocab}}). S2 says S1\'s word and adds another. S3 repeats and adds another. Continue around the group.' },
+
+      // STRUCTURE
+      { id: 'st1', name: 'Repetition Drill', category: 'Structure', min: 1, max: 12, unit: 'all', materials: '', goal: 'Sentence rhythm and pronunciation.', description: 'Model a sentence ({{sentence}}). Have students repeat it perfectly 3 times. Vary the speed or volume to keep it fun.' },
+      { id: 'st2', name: 'Substitution Drill', category: 'Structure', min: 1, max: 12, unit: 'all', materials: 'Picture Cards ({{vocab}})', goal: 'Grammar flexibility.', description: 'Say a base sentence ({{sentence}}). Show a new picture (from {{vocab}}) and have students substitute the new phrase.' },
+      { id: 'st3', name: 'Relay Race', category: 'Structure', min: 4, max: 12, unit: 'all', materials: 'Flashcards ({{vocab}})', goal: 'Sentence production under pressure.', description: 'Teams line up. Say a target sentence ({{sentence}}). S1 races to the board, touches the correct card, repeats the sentence, and tags S2.' },
+      { id: 'st4', name: 'Action Relay', category: 'Structure', min: 4, max: 12, unit: 'all', materials: 'Picture Cards ({{vocab}})', goal: 'Verb/Structure production.', description: 'Show S1 a card (from {{vocab}}). S1 performs the action for S2 and says {{sentence}}. S2 does the same for S3. The last person runs to the front.' },
+      { id: 'st5', name: 'Find Your Partner', category: 'Structure', min: 4, max: 12, unit: 'all', materials: 'Duplicate Picture Cards', goal: 'Meaningful Q&A exchange.', description: 'Deal matching cards to students. They walk around asking the target question ({{sentence}}) to find the student with their matching card.' },
+      { id: 'st6', name: 'Identify the Picture', category: 'Structure', min: 3, max: 12, unit: 'all', materials: 'Picture Cards ({{vocab}})', goal: 'Chained Q&A.', description: 'Students stand in a row with cards. S1 shows their card to S2 and asks the target question ({{sentence}}). S2 answers, then turns to S3 and asks about their own card.' },
+      { id: 'st7', name: 'Living Sentences', category: 'Structure', min: 4, max: 12, unit: 'all', materials: '', goal: 'Sentence word order.', description: 'Assign one word of {{sentence}} to each student. They must arrange themselves in a line in the correct grammatical order and say the sentence.' },
+      { id: 'st8', name: 'Pair Quiz', category: 'Structure', min: 2, max: 12, unit: 'all', materials: 'Picture Cards ({{vocab}})', goal: 'Independent Q&A.', description: 'Pairs place cards face down. S1 turns over a card and quizzes S2 using the target question ({{sentence}}). S2 answers and turns over the next card.' },
+      { id: 'st9', name: 'Team Game', category: 'Structure', min: 4, max: 12, unit: 'all', materials: '', goal: 'Competitive recall.', description: 'Divide into two teams. Ask a question ({{sentence}}). The first to answer correctly wins a point. Or they ask each other.' },
+      { id: 'st10', name: 'Tic-Tac-Toe', category: 'Structure', min: 4, max: 12, unit: 'all', materials: 'Whiteboard, Markers', goal: 'Strategy and grammar.', description: 'Draw a 3x3 grid. Ask a team a question ({{sentence}}). If they answer correctly, they place an X or O. First to 3 in a row wins.' },
+      { id: 'st11', name: 'Flip It', category: 'Structure', min: 2, max: 12, unit: 'all', materials: 'Student Cards', goal: 'Counting and plurals practice.', description: 'Pairs flip cards simultaneously. If they match, they must use {{sentence}} with the item.' },
+      { id: 'st12', name: 'Pass the Card', category: 'Structure', min: 3, max: 12, unit: 'all', materials: 'Student Cards', goal: 'Repetitive question drilling.', description: 'Pass a card face down down the line. Each student asks the question ({{sentence}}). The last person flips it over, answers, and runs to the front.' },
+      { id: 'st13', name: 'Pick Up', category: 'Structure', min: 2, max: 12, unit: 'all', materials: 'Student Cards ({{vocab}})', goal: 'Reward-based Q&A.', description: 'Place cards face down. Pairs play Rock-Paper-Scissors. Winner flips a card and asks the question ({{sentence}}). Partner answers. Goal is to collect the most cards.' },
+      { id: 'st14', name: 'Walk and Talk', category: 'Structure', min: 2, max: 12, unit: 'all', materials: 'Teacher Cards ({{vocab}})', goal: 'Dynamic paired practice.', description: 'Place cards around the room. Pairs walk around. Say "Stop!". Pairs stop at the nearest card and use it as a cue to exchange the target Q&A ({{sentence}}).' },
+      { id: 'st15', name: 'What Is It? (Relay)', category: 'Structure', min: 4, max: 12, unit: 'all', materials: 'Teacher Cards ({{vocab}})', goal: 'Speed Q&A.', description: 'Relay lines. Give each line a card. S2 asks S1 ({{sentence}}). S1 answers. Pass the card back. See how fast the line can finish.' },
+
+      // PHONICS
+      { id: 'p1', name: 'Which Letter?', category: 'Phonics', min: 1, max: 12, unit: 'all', materials: 'Teacher Cards ({{phonics}})', goal: 'Capital/Lowercase discrimination.', description: 'Say a target letter (from {{phonics}}). Gesture wide for capital, small for lowercase. Students point to the correct card. Then reverse.' },
+      { id: 'p2', name: 'Which Sound?', category: 'Phonics', min: 1, max: 12, unit: 'all', materials: 'Teacher Cards ({{phonics}})', goal: 'Sound association.', description: 'Show letter cards randomly (from {{phonics}}). Students make the MAT phonics gesture and say the sound out loud.' },
+      { id: 'p3', name: 'Alphabet Puzzles', category: 'Phonics', min: 2, max: 12, unit: 'all', materials: 'Paper Letters ({{phonics}} - Cut up)', goal: 'Letter shape recognition.', description: 'Students piece together cut-up paper letters ({{phonics}}). Once assembled, they must say the letter name and sound.' },
+      { id: 'p4', name: 'Big or Small?', category: 'Phonics', min: 1, max: 12, unit: 'all', materials: 'Whiteboard, Markers', goal: 'Case identification.', description: 'Write a target letter ({{phonics}}) on the board. Students decide if it is Big or Small and show the corresponding hand gesture (hands wide vs fingers pinched).' },
+      { id: 'p5', name: 'Body Alphabet', category: 'Phonics', min: 3, max: 12, unit: 'all', materials: '', goal: 'Physical letter association.', description: 'S1 forms a letter ({{phonics}}) with their body. The team guesses the letter. Alternatively, trace a letter on a student\'s back and have them guess it.' },
+      { id: 'p6', name: 'Building Letters', category: 'Phonics', min: 1, max: 12, unit: 'all', materials: 'Paper Shapes (Lines/Curves)', goal: 'Letter construction.', description: 'Give students paper lines and curves. Say a letter ({{phonics}}). Students must build the letter shape on their desks using the pieces.' },
+      { id: 'p7', name: 'Find the Hidden Letter', category: 'Phonics', min: 1, max: 12, unit: 'all', materials: 'Student Books', goal: 'Visual scanning.', description: 'Students look at the scene in their book. Say "Find the letter ({{phonics}})". Students search the picture, point to it, and say the letter.' },
+      { id: 'p8', name: 'Matching Game', category: 'Phonics', min: 2, max: 12, unit: 'all', materials: 'Student Cards ({{phonics}})', goal: 'Case matching.', description: 'Hold up a capital Teacher Card ({{phonics}}). Students must quickly find and hold up the matching lowercase Student Card.' },
+      { id: 'p9', name: 'Playing with Letters', category: 'Phonics', min: 2, max: 12, unit: 'all', materials: 'Student Cards ({{phonics}})', goal: 'Independent matching.', description: 'Give students sets of capital and lowercase letters ({{phonics}}). They race to match all the capitals to their lowercase partners.' },
+      { id: 'p10', name: 'Show Me', category: 'Phonics', min: 1, max: 12, unit: 'all', materials: 'Student Books or Cards ({{phonics}})', goal: 'Listening comprehension.', description: 'Say "Show me a word starting with ({{phonics}})". Students point to the picture or hold up the card and answer.' },
+      { id: 'p11', name: 'Sorting Game', category: 'Phonics', min: 2, max: 12, unit: 'all', materials: 'Picture Cards ({{phonics}}), Envelopes', goal: 'Initial sound categorization.', description: 'Label envelopes with target letters ({{phonics}}). Students say the word on their card and place it in the envelope with the matching initial sound.' },
+      { id: 'p12', name: 'Stand Up Game', category: 'Phonics', min: 4, max: 12, unit: 'all', materials: '', goal: 'Phonemic listening.', description: 'Assign words to students. Say "Stand up if you have {{phonics}}". All students with those sounds stand up and make the phonics gesture.' },
+      { id: 'p13', name: 'Letter Trace Relay', category: 'Phonics', min: 4, max: 12, unit: 'all', materials: 'Whiteboard, Markers', goal: 'Tactile letter recognition.', description: 'Trace a letter ({{phonics}}) on the back of the last student in line. They trace it on the next student. The front student runs to the board and writes the letter.' },
+      { id: 'p14', name: 'What\'s the Letter?', category: 'Phonics', min: 4, max: 12, unit: 'all', materials: 'Whiteboard, Markers', goal: 'Initial sound recognition.', description: 'Call out a target word ({{vocab}}). The first student in the relay races to the board, writes the FIRST letter of that word ({{phonics}}), and says it.' },
+      { id: 'p15', name: 'What\'s Missing?', category: 'Phonics', min: 2, max: 12, unit: 'all', materials: 'Whiteboard, Markers', goal: 'Spelling awareness.', description: 'Write words on the board with one letter missing (focusing on {{phonics}}). Teams race to write the complete word correctly on the board.' },
+
+      // DESK WORK
+      { id: 'd1', name: 'Workbook Tracing', category: 'Desk Work', min: 1, max: 12, unit: 'all', materials: 'Pencils, Workbooks', goal: 'Fine motor skills and reading.', description: 'Distribute workbooks. Have students trace the target letters ({{phonics}}) or words ({{vocab}}) while pronouncing them quietly. Monitor grip and stroke order.' },
+      { id: 'd2', name: 'Back-to-Back Pictures', category: 'Desk Work', min: 2, max: 12, unit: 'all', materials: 'Paper, Pencils', goal: 'Communication and listening.', description: 'Partners sit back-to-back. S1 draws a simple picture ({{vocab}}) from your instructions, then describes it to S2. S2 draws it based solely on listening.' },
+      { id: 'd3', name: 'File Grids/Screens', category: 'Desk Work', min: 2, max: 12, unit: 'all', materials: 'File Folders, Student Cards ({{vocab}})', goal: 'Coordinate description.', description: 'Pairs sit with a folder screen between them. S1 arranges cards ({{vocab}}) on a 3x3 grid and describes the locations. S2 tries to duplicate the grid by listening.' },
+      { id: 'd4', name: 'More Words with...', category: 'Desk Work', min: 1, max: 12, unit: 'all', materials: 'Paper, Crayons', goal: 'Vocabulary expansion.', description: 'Write a target letter ({{phonics}}). Have students brainstorm and draw other words they know that start with that letter to make a poster.' },
+      { id: 'd5', name: 'Which Letter Is Different?', category: 'Desk Work', min: 1, max: 12, unit: 'all', materials: 'Worksheets or Whiteboard', goal: 'Visual discrimination.', description: 'Write a target letter ({{phonics}}), then a row of 4 letters where 1 is slightly different (e.g., b b d b). Students must cross out the different one.' },
+      { id: 'd6', name: 'Which Letter Is the Same?', category: 'Desk Work', min: 1, max: 12, unit: 'all', materials: 'Worksheets or Whiteboard', goal: 'Visual matching.', description: 'Write a target letter ({{phonics}}), then a row of 4 letters where only 1 matches (e.g., p | d q p b). Students must circle the matching letter.' },
+      { id: 'd7', name: 'Pair Dictation', category: 'Desk Work', min: 2, max: 12, unit: 'all', materials: 'Paper, Pencils', goal: 'Listening and writing.', description: 'S1 dictates an image or letter (e.g., "Number 1 is {{phonics}}"). S2 draws/writes it. Compare papers at the end and reverse roles.' },
+
+      // WRAP-UP
+      { id: 'r1', name: 'The Goodbye Song', category: 'Wrap-up', min: 1, max: 12, unit: 'all', materials: 'Tablet (Audio/Video - Goodbye Song)', goal: 'Closing routine.', description: 'Play the Goodbye Song. Students sing along and wave goodbye to their classmates and the teacher.' },
+      { id: 'r2', name: 'Hot Potato', category: 'Wrap-up', min: 3, max: 12, unit: 'all', materials: 'Beanbag or Ball, Tablet (Audio/Video - Background Music)', goal: 'Fun review under pressure.', description: 'Play music on the tablet. Students pass a ball. Stop the music. The student holding the ball must answer a review question ({{sentence}}).' },
+      { id: 'r3', name: 'How Many Steps?', category: 'Wrap-up', min: 2, max: 12, unit: 'all', materials: '', goal: 'Physical counting.', description: 'Students stand across the room. They ask "How many steps?". You answer "Two big steps". First to reach you is the next teacher.' },
+      { id: 'r4', name: 'Stop the Music', category: 'Wrap-up', min: 4, max: 12, unit: 'all', materials: 'Tablet (Audio/Video - Background Music), Picture Cards ({{vocab}})', goal: 'Target mixing.', description: 'Students march to music with a card ({{vocab}}). Stop the music. They must find a partner, exchange Q&A using their cards, and swap cards.' },
+      { id: 'r5', name: 'Rock, Paper, Scissors', category: 'Wrap-up', min: 2, max: 12, unit: 'all', materials: '', goal: 'Quick pair dismissal.', description: 'Students play Rock, Paper, Scissors with the teacher or partner. The loser answers a target question ({{sentence}}) before being allowed to pack up.' }
+    ];
+
+    const App = () => {
+      const [activeTab, setActiveTab] = useState('planner'); 
+      const [activeProgram, setActiveProgram] = useState('intl');
+      const [studentCount, setStudentCount] = useState(6);
+      const [activeDay, setActiveDay] = useState('月');
+      const [selectedBook, setSelectedBook] = useState('lb1');
+      const [selectedUnit, setSelectedUnit] = useState(1);
+
+      // HOLIDAYS STATE
+      const [holidays, setHolidays] = useState({ '月': false, '火': false, '水': false, '木': false, '金': false });
+
+      const [targets, setTargets] = useState({
+        intl: { vocab: '', sentences: '', phonics: '' },
+        fun: { vocab: '', sentences: '', phonics: '' },
+        step: { vocab: '', sentences: '', phonics: '' }
+      });
+
+      const [plans, setPlans] = useState({ intl: {}, fun: {}, step: {} });
+
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [newAct, setNewAct] = useState({ name: '', category: 'Warm-up', min: 1, max: 12, unit: 'all', materials: '', goal: '', description: '' });
+      const [repository, setRepository] = useState(initialRepository);
+      const [searchQuery, setSearchQuery] = useState('');
+
+      // --- DERIVED PLAN (Auto-fill Logic) ---
+      const derivedPlan = useMemo(() => {
+        const currentBlocks = programConfig[activeProgram].blocks;
+        const newPlan = { ...(plans[activeProgram] || {}) };
+        
+        weekDays.forEach(day => {
+          if (holidays[day]) return;
+
+          currentBlocks.forEach(block => {
+            const validOptions = repository.filter(a => 
+              block.allowedTypes.includes(a.category) && 
+              studentCount >= a.min && studentCount <= a.max
+            );
+            
+            // Re-validate selection if student count changes
+            if (newPlan[`${day}-${block.id}`] && !validOptions.find(o => o.id === newPlan[`${day}-${block.id}`])) {
+               newPlan[`${day}-${block.id}`] = '';
+            }
+
+            // Auto-fill if exactly ONE option is available
+            if (validOptions.length === 1 && !newPlan[`${day}-${block.id}`]) {
+              newPlan[`${day}-${block.id}`] = validOptions[0].id;
+            }
+          });
+        });
+        return newPlan;
+      }, [plans, activeProgram, repository, studentCount, holidays]);
+
+      useEffect(() => {
+        setPlans(prev => {
+          const currentPlanStr = JSON.stringify(prev[activeProgram] || {});
+          const derivedPlanStr = JSON.stringify(derivedPlan);
+          if (currentPlanStr !== derivedPlanStr) {
+             return { ...prev, [activeProgram]: derivedPlan };
+          }
+          return prev;
+        });
+      }, [derivedPlan, activeProgram]);
+
+      const handleBookChange = (e) => {
+        setSelectedBook(e.target.value);
+        setSelectedUnit(1);
+      };
+
+      const updatePlan = (day, blockId, activityId) => {
+        setPlans(prev => ({
+          ...prev,
+          [activeProgram]: { ...prev[activeProgram], [`${day}-${blockId}`]: activityId }
+        }));
+      };
+
+      const updateTarget = (field, value) => {
+        setTargets(prev => ({
+          ...prev,
+          [activeProgram]: { ...prev[activeProgram], [field]: value }
+        }));
+      };
+
+      const generateSet = () => {
+        const bookData = curriculumSets[selectedBook];
+        const unitData = bookData.units.find(u => u.id === Number(selectedUnit));
+        
+        if(unitData) {
+          updateTarget('vocab', unitData.vocab);
+          updateTarget('sentences', unitData.sentences);
+          updateTarget('phonics', unitData.phonics);
+          randomizeWeek(selectedBook, unitData.id);
+        }
+      };
+
+      const randomizeWeek = (bookPref = null, unitPref = null) => {
+        let newPlan = {};
+        const currentBlocks = programConfig[activeProgram].blocks;
+        const targetUnitStr = bookPref && unitPref ? `${bookPref}-${unitPref}` : null;
+
+        // Global memory: Prevents duplicate games across the whole 5-day week
+        let usedCategoryIds = {}; 
+        categories.forEach(cat => usedCategoryIds[cat] = new Set());
+
+        weekDays.forEach(day => {
+          if (holidays[day]) return;
+
+          currentBlocks.forEach(block => {
+            // 1. Try unused activity matching the specific unit tag
+            let available = repository.filter(a => 
+              block.allowedTypes.includes(a.category) && 
+              studentCount >= a.min && studentCount <= a.max &&
+              !usedCategoryIds[a.category].has(a.id) && 
+              (a.unit === targetUnitStr || a.unit === 'all')
+            );
+            
+            // 2. Fallback: Unused activity from any unit
+            if (available.length === 0) {
+              available = repository.filter(a => 
+                block.allowedTypes.includes(a.category) && 
+                studentCount >= a.min && studentCount <= a.max && 
+                !usedCategoryIds[a.category].has(a.id)
+              );
+            }
+
+            // 3. Last Resort: Allow duplicates if repository is exhausted
+            if (available.length === 0) {
+              available = repository.filter(a => 
+                block.allowedTypes.includes(a.category) && 
+                studentCount >= a.min && studentCount <= a.max
+              );
+            }
+
+            if (available.length > 0) {
+              const picked = available[Math.floor(Math.random() * available.length)];
+              newPlan[`${day}-${block.id}`] = picked.id;
+              usedCategoryIds[picked.category].add(picked.id);
+            } else {
+              newPlan[`${day}-${block.id}`] = ''; 
+            }
+          });
+        });
+
+        setPlans(prev => ({ ...prev, [activeProgram]: newPlan }));
+      };
+
+      const openQuickAddModal = (categoryPref) => {
+        setNewAct({ 
+          name: '', category: categoryPref, min: 1, max: studentCount > 12 ? 12 : studentCount, 
+          unit: selectedBook && selectedUnit ? `${selectedBook}-${selectedUnit}` : 'all', 
+          materials: '', goal: '', description: '' 
+        });
+        setIsModalOpen(true);
+      };
+
+      const handleAddActivity = (e) => {
+        e.preventDefault();
+        if (!newAct.name) return;
+        setRepository([...repository, { ...newAct, id: generateId() }]);
+        setIsModalOpen(false);
+        setNewAct({ name: '', category: 'Warm-up', min: 1, max: 12, unit: 'all', materials: '', goal: '', description: '' });
+      };
+
+      const removeActivity = (id) => {
+        setRepository(repository.filter(a => a.id !== id));
+      };
+
+      // --- FILTER FOR REPOSITORY SEARCH ---
+      const filteredRepository = useMemo(() => {
+        if (!searchQuery) return repository;
+        const lowerQ = searchQuery.toLowerCase();
+        return repository.filter(act => 
+          act.name.toLowerCase().includes(lowerQ) ||
+          act.category.toLowerCase().includes(lowerQ) ||
+          (act.description && act.description.toLowerCase().includes(lowerQ)) ||
+          (act.materials && act.materials.toLowerCase().includes(lowerQ)) ||
+          (act.goal && act.goal.toLowerCase().includes(lowerQ))
+        );
+      }, [repository, searchQuery]);
+
+      const insightsByDay = useMemo(() => {
+        const result = {};
+        weekDays.forEach(day => {
+          result[day] = { materials: [], goals: [] };
+          
+          if (holidays[day]) {
+            result[day].isHoliday = true;
+            return;
+          }
+
+          programConfig[activeProgram].blocks.forEach(block => {
+            const actId = derivedPlan[`${day}-${block.id}`];
+            const act = repository.find(a => a.id === actId);
+            
+            if (act) {
+              if (act.materials && act.materials.trim() !== '') {
+                result[day].materials.push({ name: act.name, text: formatDescription(act.materials.trim(), targets[activeProgram]) });
+              }
+              if (act.goal && act.goal.trim() !== '') {
+                result[day].goals.push({ name: act.name, text: act.goal.trim() });
+              }
+            }
+          });
+          
+          const uniqueMats = [];
+          const matKeys = new Set();
+          result[day].materials.forEach(m => {
+            const key = `${m.name}:${m.text}`;
+            if(!matKeys.has(key)) { matKeys.add(key); uniqueMats.push(m); }
+          });
+          result[day].materials = uniqueMats;
+
+          const uniqueGoals = [];
+          const goalKeys = new Set();
+          result[day].goals.forEach(g => {
+            const key = `${g.name}:${g.text}`;
+            if(!goalKeys.has(key)) { goalKeys.add(key); uniqueGoals.push(g); }
+          });
+          result[day].goals = uniqueGoals;
+        });
+        
+        return result;
+      }, [derivedPlan, repository, activeProgram, holidays, targets]);
+
+      const exportToExcel = () => {
+        const currentBlocks = programConfig[activeProgram].blocks;
+        const currentTargets = targets[activeProgram];
+        
+        const planData = [];
+        planData.push([`${programConfig[activeProgram].name} - Lesson Plan`]);
+        planData.push(['Target Vocabulary', currentTargets.vocab]);
+        planData.push(['Target Sentences', currentTargets.sentences]);
+        planData.push(['Target Phonics', currentTargets.phonics]);
+        planData.push([]);
+        
+        planData.push(['Block (カテゴリ)', ...weekDays]);
+        
+        currentBlocks.forEach(block => {
+          const row = [block.label];
+          weekDays.forEach(day => {
+            if (holidays[day]) {
+               row.push('休講 (Holiday)');
+            } else {
+               const actId = derivedPlan[`${day}-${block.id}`];
+               const activity = repository.find(a => a.id === actId);
+               
+               let cellText = activity ? activity.name : '';
+               if (activity && activity.description) {
+                 cellText += `\n\n[Mechanics]\n${formatDescription(activity.description, currentTargets)}`;
+               }
+               row.push(cellText);
+            }
+          });
+          planData.push(row);
+        });
+
+        const insightsData = [];
+        insightsData.push([`${programConfig[activeProgram].name} - Daily Insights`]);
+        insightsData.push([]);
+        
+        weekDays.forEach(day => {
+          insightsData.push([`--- ${day} ---`]);
+          if (holidays[day]) {
+            insightsData.push(['目標 (Goals)', '休講 (Holiday)']);
+            insightsData.push(['必要な教材 (Materials)', '休講 (Holiday)']);
+          } else {
+            const mats = insightsByDay[day].materials.map(m => `${m.name}: ${m.text}`);
+            const goals = insightsByDay[day].goals.map(g => `${g.name}: ${g.text}`);
+            insightsData.push(['目標 (Goals)', goals.length > 0 ? goals.join('\n') : 'None']);
+            insightsData.push(['必要な教材 (Materials)', mats.length > 0 ? mats.join('\n') : 'None']);
+          }
+          insightsData.push([]);
+        });
+
+        const wb = XLSX.utils.book_new();
+        const wsPlan = XLSX.utils.aoa_to_sheet(planData);
+        const wsInsights = XLSX.utils.aoa_to_sheet(insightsData);
+        
+        XLSX.utils.book_append_sheet(wb, wsPlan, 'Weekly Plan');
+        XLSX.utils.book_append_sheet(wb, wsInsights, 'Materials & Goals');
+        
+        XLSX.writeFile(wb, `ABC_Plan_${activeProgram}.xlsx`);
+      };
+
+      const config = programConfig[activeProgram];
+      const currentTargets = targets[activeProgram];
+
+      return (
+        <div className="min-h-screen print:min-h-0 p-4 sm:p-8 print:p-0 relative">
+          
+          <div className="max-w-7xl mx-auto mb-6 flex space-x-2 bg-gray-200 p-1.5 rounded-xl w-fit no-print">
+            <button onClick={() => setActiveTab('planner')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'planner' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+              <CalendarIcon className="w-5 h-5" /> 週間レッスンプラン (Weekly Planner)
+            </button>
+            <button onClick={() => setActiveTab('repository')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'repository' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+              <DatabaseIcon className="w-5 h-5" /> アクティビティ管理 (Repository)
+            </button>
+          </div>
+
+          {activeTab === 'planner' && (
+            <div className="max-w-7xl mx-auto space-y-4">
+              
+              <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 no-print">
+                <div className="flex bg-gray-100 p-1 rounded-lg w-full lg:w-auto">
+                  <button onClick={() => setActiveProgram('intl')} className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'intl' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>International School</button>
+                  <button onClick={() => setActiveProgram('fun')} className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'fun' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Fun English</button>
+                  <button onClick={() => setActiveProgram('step')} className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'step' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Step English</button>
+                </div>
+                <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-200">
+                  <UsersIcon className="w-5 h-5 text-yellow-600" />
+                  <label className="text-sm font-bold text-yellow-800">生徒数 (Students):</label>
+                  <input type="number" min="1" max="12" value={studentCount} onChange={(e) => setStudentCount(Number(e.target.value))} className="w-16 p-1 border rounded bg-white text-center font-bold outline-none" />
+                </div>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm no-print space-y-4">
+                
+                <div className="flex flex-col md:flex-row items-end md:items-center gap-4">
+                  <div className="flex items-center gap-2 text-blue-800 font-bold whitespace-nowrap">
+                    <ZapIcon className="w-5 h-5 fill-blue-600 text-blue-600"/> Quick Gen Set:
+                  </div>
+                  <div className="flex items-center gap-2 flex-1 w-full">
+                    <BookIcon className="w-5 h-5 text-gray-400" />
+                    <select value={selectedBook} onChange={handleBookChange} className="p-2 border rounded-md text-sm bg-white font-medium flex-1 md:flex-none">
+                      {Object.entries(curriculumSets).map(([key, data]) => (
+                        <option key={key} value={key}>{data.name}</option>
+                      ))}
+                    </select>
+                    <select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="p-2 border rounded-md text-sm bg-white font-medium">
+                      {curriculumSets[selectedBook].units.map(u => (
+                        <option key={u.id} value={u.id}>{selectedBook === 'lb1' ? `Lesson ${u.id}` : `Unit ${u.id}`}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-2 w-full md:w-auto">
+                    <button onClick={generateSet} className="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm font-bold whitespace-nowrap">
+                      Generate Target & Week
+                    </button>
+                    <button onClick={() => randomizeWeek()} className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm text-sm font-bold" title="Shuffle week without changing targets">
+                      <ShuffleIcon className="w-4 h-4" /> 
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 pt-3 border-t border-blue-200">
+                   <div className="text-sm font-bold text-blue-800 flex items-center gap-2">
+                     <PalmtreeIcon className="w-4 h-4" /> 休講日 (Holidays):
+                   </div>
+                   <div className="flex gap-4 flex-wrap">
+                     {weekDays.map(day => (
+                       <label key={day} className="flex items-center gap-1 cursor-pointer bg-white px-2 py-1 rounded border border-gray-300 hover:bg-gray-50">
+                         <input 
+                           type="checkbox" 
+                           checked={holidays[day]} 
+                           onChange={(e) => setHolidays(prev => ({...prev, [day]: e.target.checked}))} 
+                           className="w-4 h-4 text-blue-600 rounded cursor-pointer" 
+                         />
+                         <span className={`text-sm font-bold ${holidays[day] ? 'text-gray-400' : 'text-gray-700'}`}>{day}</span>
+                       </label>
+                     ))}
+                   </div>
+                </div>
+              </div>
+
+              <div className="bg-white border-2 border-gray-400 print-border rounded-xl overflow-hidden shadow-sm print-wrapper print-break-after print-avoid-break">
+                
+                <div className="p-6 border-b-2 border-gray-400 print-border-cell bg-white">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h1 className="text-2xl font-black text-gray-800 print-text-black">ABC Garden • {config.name}</h1>
+                      <p className="text-gray-600 font-bold print-text-black">{config.duration}</p>
+                    </div>
+                    <div className="text-right no-print flex gap-2">
+                      <button onClick={exportToExcel} className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"><DownloadIcon className="w-4 h-4"/> Excel</button>
+                      <button onClick={() => window.print()} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"><PrinterIcon className="w-4 h-4"/> Print</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex border-b-2 border-gray-400 bg-gray-100 no-print">
+                  {weekDays.map(day => (
+                    <button
+                      key={day}
+                      onClick={() => setActiveDay(day)}
+                      className={`flex-1 py-3 text-center font-black text-sm sm:text-base transition-colors ${
+                        activeDay === day
+                          ? 'bg-white text-blue-700 border-b-4 border-blue-600'
+                          : holidays[day] 
+                            ? 'text-gray-400 hover:bg-gray-200 border-b-4 border-transparent'
+                            : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200 border-b-4 border-transparent'
+                      }`}
+                    >
+                      {day} {holidays[day] && <span className="text-[10px] block font-normal">(休講)</span>}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 print-border-cell border-b-2 border-gray-400">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 print-text-black">Target Vocabulary</label>
+                    <input type="text" value={currentTargets.vocab} onChange={(e) => updateTarget('vocab', e.target.value)} placeholder="e.g. red, blue, green" className="w-full p-2 border border-gray-300 rounded outline-none print:hidden" />
+                    <div className="hidden print:block text-sm font-bold print-text-black break-words">{currentTargets.vocab || '\u00A0'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 print-text-black">Target Sentences</label>
+                    <input type="text" value={currentTargets.sentences} onChange={(e) => updateTarget('sentences', e.target.value)} placeholder="e.g. What color is it?" className="w-full p-2 border border-gray-300 rounded outline-none print:hidden" />
+                    <div className="hidden print:block text-sm font-bold print-text-black break-words">{currentTargets.sentences || '\u00A0'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 print-text-black">Target Phonics</label>
+                    <input type="text" value={currentTargets.phonics} onChange={(e) => updateTarget('phonics', e.target.value)} placeholder="e.g. Aa, Bb, Cc" className="w-full p-2 border border-gray-300 rounded outline-none print:hidden" />
+                    <div className="hidden print:block text-sm font-bold print-text-black break-words">{currentTargets.phonics || '\u00A0'}</div>
+                  </div>
+                </div>
+
+                {/* SCREEN VIEW ONLY */}
+                <div className="block print:hidden p-4 sm:p-6 bg-white space-y-4 min-h-[300px]">
+                  <h2 className="font-black text-xl text-gray-800 border-b pb-2 mb-4 flex items-center gap-2">
+                    {activeDay} (Activity Blocks)
+                  </h2>
+                  
+                  {holidays[activeDay] ? (
+                    <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+                      <PalmtreeIcon className="w-12 h-12 text-gray-300 mb-3" />
+                      <h3 className="text-xl font-bold text-gray-500">休講 (Holiday)</h3>
+                      <p className="text-gray-400 mt-2 font-medium">There are no lessons scheduled for this day.</p>
+                      <p className="text-xs text-gray-400 mt-1">To enable scheduling, uncheck this day in the toggle bar above.</p>
+                    </div>
+                  ) : (
+                    config.blocks.map(block => {
+                      const validOptions = repository.filter(a => 
+                        block.allowedTypes.includes(a.category) && 
+                        studentCount >= a.min && studentCount <= a.max
+                      );
+                      
+                      const isMissing = validOptions.length === 0;
+                      const isSingle = validOptions.length === 1;
+                      const selectedActId = derivedPlan[`${activeDay}-${block.id}`];
+                      const selectedAct = repository.find(a => a.id === selectedActId);
+
+                      return (
+                        <div key={block.id} className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start">
+                          <div className="w-full md:w-1/3">
+                            <h3 className="font-bold text-gray-800 text-lg">{block.label}</h3>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {block.allowedTypes.map(type => (
+                                <span key={type} className="text-[10px] uppercase font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{type}</span>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="w-full md:w-2/3 flex flex-col gap-3">
+                            <select
+                              value={selectedActId || ''}
+                              onChange={(e) => updatePlan(activeDay, block.id, e.target.value)}
+                              disabled={isSingle}
+                              className={`w-full p-3 rounded-lg border text-sm font-bold outline-none shadow-sm transition-all
+                                ${isMissing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-gray-300 focus:ring-2 focus:ring-blue-500'}
+                                ${isSingle ? 'opacity-100 bg-gray-200 border-gray-400 text-gray-800 cursor-not-allowed' : 'text-gray-900'}
+                              `}
+                            >
+                              <option value="">-- Select Activity --</option>
+                              {validOptions.map(act => (
+                                <option key={act.id} value={act.id}>{act.name}</option>
+                              ))}
+                            </select>
+
+                            {selectedAct && selectedAct.description && (
+                              <div className="text-sm text-gray-700 bg-white p-3 rounded-lg border border-dashed border-gray-300 leading-relaxed">
+                                {formatDescription(selectedAct.description, currentTargets)}
+                              </div>
+                            )}
+
+                            {isMissing && (
+                              <button onClick={() => openQuickAddModal(block.allowedTypes[0])} className="w-full flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                                <PlusCircleIcon className="w-4 h-4" /> 追加 (Quick Add Missing Activity)
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* PRINT VIEW ONLY */}
+                <div className="hidden print:block w-full p-0 overflow-visible bg-white">
+                  <table className="w-full text-left border-collapse table-fixed">
+                    <thead>
+                      <tr>
+                        <th className="p-3 border-b-2 border-r-2 border-gray-400 print-border-cell font-bold text-gray-800 bg-gray-100 print-bg-gray w-[15%]">Block Focus</th>
+                        {weekDays.map(day => (
+                          <th key={day} className={`p-3 border-b-2 border-r border-gray-400 print-border-cell text-center font-bold text-gray-800 bg-gray-100 print-bg-gray w-[17%] last:border-r-0 ${holidays[day] ? 'text-gray-400' : ''}`}>
+                            {day}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {config.blocks.map(block => (
+                        <tr key={block.id}>
+                          <td className="p-3 border-b-2 border-r-2 border-gray-400 print-border-cell bg-gray-50 print-bg-gray text-sm font-bold text-gray-800 print-text-black align-top break-words">
+                            {block.label}
+                          </td>
+                          {weekDays.map(day => {
+                            if (holidays[day]) {
+                              return (
+                                <td key={`${day}-${block.id}`} className="p-2 border-b-2 border-r border-gray-400 print-border-cell last:border-r-0 align-middle bg-gray-100 print-bg-holiday text-center">
+                                  <span className="font-bold text-[11px] text-gray-500 print-text-black">休講 (Holiday)</span>
+                                </td>
+                              );
+                            }
+
+                            const selectedActId = derivedPlan[`${day}-${block.id}`];
+                            const selectedAct = repository.find(a => a.id === selectedActId);
+
+                            return (
+                              <td key={`${day}-${block.id}`} className="p-2 border-b-2 border-r border-gray-400 print-border-cell last:border-r-0 align-top bg-white">
+                                <div className="font-bold text-[11px] text-black break-words">
+                                  {selectedAct ? selectedAct.name : ''}
+                                </div>
+                                {selectedAct && selectedAct.description && (
+                                  <div className="text-[10px] text-black leading-tight border-t border-dashed border-gray-400 mt-1 pt-1 whitespace-normal break-words">
+                                    {formatDescription(selectedAct.description, currentTargets)}
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* DAILY INSIGHTS (Forced to Page 2 on Print) */}
+              <div className="mt-8 print:mt-0 print-page-break">
+                <h3 className="text-xl font-black text-gray-800 mb-4 print-text-black no-print">Daily Checklist & Goals</h3>
+                <div className="flex flex-col gap-4">
+                  {weekDays.map(day => (
+                    <div key={day} className={`bg-white rounded-lg border-2 border-gray-300 print-border-cell overflow-hidden shadow-sm print-avoid-break ${holidays[day] ? 'opacity-60' : ''}`}>
+                      <div className="bg-gray-100 print-bg-gray px-4 py-2 border-b-2 border-gray-300 print-border-cell flex justify-between items-center">
+                        <h4 className="font-bold text-gray-800 print-text-black">{day}</h4>
+                        {holidays[day] && <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Holiday</span>}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-4 p-4">
+                        <div>
+                          <h5 className="font-bold text-sm text-gray-700 mb-2 border-b border-gray-200 pb-1 print-text-black">Goals</h5>
+                          <ul className="list-disc pl-5 text-sm text-gray-800 print-text-black space-y-1">
+                            {holidays[day] 
+                              ? <li className="font-bold text-gray-400 list-none -ml-5">休講 (Holiday - No Class)</li>
+                              : insightsByDay[day].goals.length > 0
+                                ? insightsByDay[day].goals.map((goal, i) => <li key={i}><strong className="font-bold">{goal.name}:</strong> {goal.text}</li>)
+                                : <li className="font-bold text-gray-400 list-none -ml-5">None</li>
+                            }
+                          </ul>
+                        </div>
+                        <div>
+                          <h5 className="font-bold text-sm text-gray-700 mb-2 border-b border-gray-200 pb-1 print-text-black">Materials Checklist</h5>
+                          <ul className="list-disc pl-5 text-sm text-gray-800 print-text-black space-y-1">
+                            {holidays[day]
+                              ? <li className="font-bold text-gray-400 list-none -ml-5">休講 (Holiday - No Class)</li>
+                              : insightsByDay[day].materials.length > 0 
+                                ? insightsByDay[day].materials.map((mat, i) => <li key={i}><strong className="font-bold">{mat.name}:</strong> {mat.text}</li>)
+                                : <li className="font-bold text-gray-400 list-none -ml-5">None</li>
+                            }
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* REPOSITORY TAB */}
+          {activeTab === 'repository' && (
+            <div className="max-w-7xl mx-auto flex flex-col gap-6 no-print">
+              <div className="bg-white shadow-md rounded-xl border border-gray-200 p-6">
+                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><DatabaseIcon className="w-5 h-5 text-blue-600"/> Add Activity to Database</h2>
+                <form onSubmit={handleAddActivity} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-start">
+                  <div className="lg:col-span-2">
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Name</label>
+                    <input required type="text" value={newAct.name} onChange={e => setNewAct({...newAct, name: e.target.value})} className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                  </div>
+                  <div className="lg:col-span-1">
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Category</label>
+                    <select value={newAct.category} onChange={e => setNewAct({...newAct, category: e.target.value})} className="w-full p-2 border rounded-md text-sm bg-gray-50">
+                      {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                  </div>
+                  <div className="lg:col-span-1 grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-600 mb-1 leading-tight">Min. Std</label>
+                      <input type="number" min="1" max="12" value={newAct.min} onChange={e => setNewAct({...newAct, min: Number(e.target.value)})} className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-600 mb-1 leading-tight">Max. Std</label>
+                      <input type="number" min="1" max="12" value={newAct.max} onChange={e => setNewAct({...newAct, max: Number(e.target.value)})} className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                    </div>
+                  </div>
+                  <div className="lg:col-span-1">
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Unit Tag</label>
+                    <input type="text" value={newAct.unit} onChange={e => setNewAct({...newAct, unit: e.target.value})} placeholder="e.g. all, lb1-1" className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                  </div>
+                  <div className="lg:col-span-1">
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Materials</label>
+                    <input type="text" value={newAct.materials} onChange={e => setNewAct({...newAct, materials: e.target.value})} placeholder="(Leave blank for None)" className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                  </div>
+                  
+                  <div className="lg:col-span-3">
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Goal</label>
+                    <input type="text" value={newAct.goal} onChange={e => setNewAct({...newAct, goal: e.target.value})} className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                  </div>
+                  <div className="lg:col-span-3">
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Description / Mechanics</label>
+                    <textarea rows="2" value={newAct.description} onChange={e => setNewAct({...newAct, description: e.target.value})} className="w-full p-2 border rounded-md text-sm bg-gray-50 resize-y" placeholder="Use {{vocab}}, {{sentence}}, or {{phonics}} to make it dynamic."></textarea>
+                  </div>
+                  
+                  <div className="lg:col-span-6 flex justify-end">
+                    <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700">Add to Repository</button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 border-b border-gray-200 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h3 className="font-bold text-gray-800 text-lg">Saved Activities ({filteredRepository.length})</h3>
+                  <div className="relative w-full sm:w-72">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <SearchIcon className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <input 
+                      type="text" 
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      placeholder="Search repository..." 
+                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                    />
+                  </div>
+                </div>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="p-3 border-b text-sm font-bold text-gray-600">Name / Mechanics</th>
+                      <th className="p-3 border-b text-sm font-bold text-gray-600">Category</th>
+                      <th className="p-3 border-b text-sm font-bold text-gray-600">Capacity</th>
+                      <th className="p-3 border-b text-sm font-bold text-gray-600">Materials</th>
+                      <th className="p-3 border-b text-sm font-bold text-gray-600">Goal</th>
+                      <th className="p-3 border-b w-16"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRepository.length > 0 ? (
+                      filteredRepository.map(act => (
+                        <tr key={act.id} className="hover:bg-gray-50 border-b">
+                          <td className="p-3">
+                            <div className="text-sm font-bold text-gray-800">{act.name}</div>
+                            <div className="text-[11px] text-gray-500 mt-1 line-clamp-2" title={act.description}>{act.description || '-'}</div>
+                          </td>
+                          <td className="p-3"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">{act.category}</span></td>
+                          <td className="p-3 text-sm text-gray-600 font-medium whitespace-nowrap">{act.min} - {act.max} stds</td>
+                          <td className="p-3 text-sm text-gray-600">{act.materials || '-'}</td>
+                          <td className="p-3 text-sm text-gray-600">{act.goal || '-'}</td>
+                          <td className="p-3 text-center"><button onClick={() => removeActivity(act.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2Icon className="w-4 h-4" /></button></td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="p-8 text-center text-gray-500 font-bold bg-gray-50">
+                          No activities found matching "{searchQuery}"
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* QUICK ADD MODAL */}
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+                  <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <PlusCircleIcon className="w-5 h-5 text-red-600"/> Quick Add: {newAct.category}
+                  </h3>
+                  <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600"><XIcon className="w-5 h-5"/></button>
+                </div>
+                
+                <form onSubmit={handleAddActivity} className="p-6 space-y-4">
+                  <div className="bg-red-50 text-red-700 p-3 rounded text-sm border border-red-200 font-medium">
+                    Please create an activity that supports <strong>{studentCount} student(s)</strong>.
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Game / Activity Name</label>
+                    <input required type="text" value={newAct.name} onChange={e => setNewAct({...newAct, name: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                     <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Materials Needed</label>
+                      <input type="text" value={newAct.materials} onChange={e => setNewAct({...newAct, materials: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="(Leave blank for None)" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Unit Tag (Optional)</label>
+                      <input type="text" value={newAct.unit} onChange={e => setNewAct({...newAct, unit: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 text-gray-500" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Goal</label>
+                    <input type="text" value={newAct.goal} onChange={e => setNewAct({...newAct, goal: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Mechanics (How to play)</label>
+                    <textarea rows="3" value={newAct.description} onChange={e => setNewAct({...newAct, description: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none resize-y" placeholder="Brief instructions for the teacher..."></textarea>
+                  </div>
+                  
+                  <div className="pt-2 flex justify-end gap-3 border-t mt-4">
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded">Cancel</button>
+                    <button type="submit" className="px-6 py-2 bg-blue-600 text-white font-bold rounded shadow-sm hover:bg-blue-700">Save & Add to Plan</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
