@@ -293,13 +293,9 @@
     const App = () => {
       const [activeTab, setActiveTab] = useState('planner'); 
       const [activeProgram, setActiveProgram] = useState('fun');
-      const [studentCount, setStudentCount] = useState(1);
       const [activeDay, setActiveDay] = useState('Monday');
       const [selectedBook, setSelectedBook] = useState('lb1');
       const [selectedUnit, setSelectedUnit] = useState(1);
-
-      // Allows teacher to act as a student if class size is 1
-      const effectiveStudentCount = studentCount === 1 ? 2 : studentCount;
 
       // HOLIDAYS STATE
       const [holidays, setHolidays] = useState({ 'Monday': false, 'Tuesday': false, 'Wednesday': false, 'Thursday': false, 'Friday': false });
