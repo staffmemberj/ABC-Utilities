@@ -501,6 +501,50 @@
         );
       }, [repository, searchQuery]);
 
+      const insightsByDay = useMemo(() => {
+        const result = {};
+        weekDays.forEach(day => {
+          result[day] = { materials: [], goals: [] };
+          
+          if (holidays[day]) {
+            result[day].isHoliday = true;
+            return;
+          }
+
+          programConfig[activeProgram].blocks.forEach(block => {
+            const actId = derivedPlan[`${day}-${block.id}`];
+            const act = repository.find(a => a.id === actId);
+            
+            if (act) {
+              if (act.materials && act.materials.trim() !== '' && act.materials.toLowerCase() !== 'none') {
+                result[day].materials.push({ name: act.name, text: formatDescription(act.materials.trim(), targets[activeProgram]) });
+              }
+              if (act.goal && act.goal.trim() !== '') {
+                result[day].goals.push({ name: act.name, text: act.goal.trim() });
+              }
+            }
+          });
+          
+          const uniqueMats = [];
+          const matKeys = new Set();
+          result[day].materials.forEach(m => {
+            const key = `${m.name}:${m.text}`;
+            if(!matKeys.has(key)) { matKeys.add(key); uniqueMats.push(m); }
+          });
+          result[day].materials = uniqueMats;
+
+          const uniqueGoals = [];
+          const goalKeys = new Set();
+          result[day].goals.forEach(g => {
+            const key = `${g.name}:${g.text}`;
+            if(!goalKeys.has(key)) { goalKeys.add(key); uniqueGoals.push(g); }
+          });
+          result[day].goals = uniqueGoals;
+        });
+        
+        return result;
+      }, [derivedPlan, repository, activeProgram, holidays, targets]);
+
       const exportToExcel = () => {
         const currentBlocks = programConfig[activeProgram].blocks;
         const currentTargets = targets[activeProgram];
@@ -517,30 +561,58 @@
         planData.push(['Target Phonics', currentTargets.phonics]);
         planData.push([]);
         
-        planData.push(['Block Focus', ...weekDays]);
+        const activeWeekDays = weekDays.filter(day => !holidays[day]);
+        
+        planData.push(['Block Focus', ...activeWeekDays]);
         
         currentBlocks.forEach(block => {
           const row = [block.label];
-          weekDays.forEach(day => {
-            if (holidays[day]) {
-               row.push('Holiday');
-            } else {
-               const actId = derivedPlan[`${day}-${block.id}`];
-               const activity = repository.find(a => a.id === actId);
-               
-               let cellText = activity ? activity.name : '';
-               if (activity && activity.description) {
-                 cellText += `\n\n[Mechanics]\n${formatDescription(activity.description, currentTargets)}`;
-               }
-               row.push(cellText);
-            }
+          activeWeekDays.forEach(day => {
+             const actId = derivedPlan[`${day}-${block.id}`];
+             const activity = repository.find(a => a.id === actId);
+             
+             let cellText = activity ? activity.name : '';
+             if (activity && activity.description) {
+               cellText += `\n\n[Mechanics]\n${formatDescription(activity.description, currentTargets)}`;
+             }
+             row.push(cellText);
           });
           planData.push(row);
         });
 
+        // Retain the insights data for the second Excel sheet
+        const insightsData = [];
+        insightsData.push([`${programConfig[activeProgram].name} - Daily Insights`]);
+        insightsData.push([]);
+        
+        activeWeekDays.forEach(day => {
+          insightsData.push([`--- ${day} ---`]);
+          const mats = [];
+          const goals = [];
+          currentBlocks.forEach(block => {
+            const actId = derivedPlan[`${day}-${block.id}`];
+            const act = repository.find(a => a.id === actId);
+            if (act) {
+              if (act.materials && act.materials.trim() !== '' && act.materials.toLowerCase() !== 'none') {
+                mats.push(`${act.name}: ${formatDescription(act.materials.trim(), currentTargets)}`);
+              }
+              if (act.goal && act.goal.trim() !== '') {
+                goals.push(`${act.name}: ${act.goal.trim()}`);
+              }
+            }
+          });
+          insightsData.push(['Goals', goals.length > 0 ? goals.join('\n') : 'None']);
+          insightsData.push(['Materials', mats.length > 0 ? mats.join('\n') : 'None']);
+          insightsData.push([]);
+        });
+
         const wb = XLSX.utils.book_new();
         const wsPlan = XLSX.utils.aoa_to_sheet(planData);
+        const wsInsights = XLSX.utils.aoa_to_sheet(insightsData);
+        
         XLSX.utils.book_append_sheet(wb, wsPlan, 'Weekly Plan');
+        XLSX.utils.book_append_sheet(wb, wsInsights, 'Materials & Goals');
+        
         XLSX.writeFile(wb, `ABC_Plan_${activeProgram}.xlsx`);
       };
 
@@ -551,6 +623,8 @@
       // Helps us identify duplicate activities in the current plan for the dropdown warnings
       const currentPlanValues = Object.values(derivedPlan).filter(val => val !== '');
       const usedActivityIds = new Set(currentPlanValues);
+      
+      const printableDays = weekDays.filter(day => !holidays[day]);
 
       return (
         <div className="min-h-screen print:min-h-0 p-4 sm:p-8 print:p-0 relative">
@@ -577,11 +651,6 @@
                     <div className="flex bg-gray-100 p-1 rounded-lg w-full lg:w-auto">
                       <button onClick={() => setActiveProgram('fun')} className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'fun' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Fun English</button>
                       <button onClick={() => setActiveProgram('step')} className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'step' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Step English</button>
-                    </div>
-                    <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-200">
-                      <UsersIcon className="w-5 h-5 text-yellow-600" />
-                      <label className="text-sm font-bold text-yellow-800">Students:</label>
-                      <input type="number" min="1" max="12" value={studentCount} onChange={(e) => setStudentCount(Number(e.target.value))} className="w-16 p-1 border rounded bg-white text-center font-bold outline-none" />
                     </div>
                   </div>
 
@@ -810,10 +879,14 @@
               {/* PRINT VIEW (1 DAY/PAGE) */}
               {/* ======================= */}
               <div className="hidden print:block w-full">
-                {weekDays.map((day, dayIndex) => {
-                  const isHoliday = holidays[day];
+                {printableDays.length === 0 && (
+                  <div className="print-text-black p-10 text-center text-xl font-bold">
+                    All days are marked as Holiday. Nothing to print.
+                  </div>
+                )}
+                {printableDays.map((day, dayIndex) => {
                   return (
-                    <div key={`print-${day}`} className={`w-full ${dayIndex < weekDays.length - 1 ? 'print-break-after' : ''}`}>
+                    <div key={`print-${day}`} className={`w-full ${dayIndex < printableDays.length - 1 ? 'print-break-after' : ''}`}>
                       
                       {/* Header */}
                       <div className="border-2 border-gray-500 print-border-2 rounded-xl mb-6 print:mb-2 bg-white overflow-hidden print-avoid-break">
@@ -852,83 +925,74 @@
                         </div>
                       </div>
 
-                      {isHoliday ? (
-                        <div className="flex flex-col items-center justify-center py-32 print:py-20 text-center border-4 border-dashed border-gray-400 print-border-2 rounded-xl bg-gray-50 print-bg-gray">
-                          <h3 className="text-5xl print:text-2xl font-bold text-gray-400 print-text-black mb-4 print:mb-2">Holiday</h3>
-                          <p className="text-2xl print:text-[12px] text-gray-500 font-medium print-text-black">No lessons scheduled for {day}.</p>
-                        </div>
-                      ) : (
-                        <>
-                          {/* Daily Blocks Table */}
-                          <div className="border-2 border-gray-500 print-border-2 rounded-xl overflow-hidden bg-white">
-                            <table className="w-full text-left border-collapse">
-                              <thead>
-                                <tr>
-                                  <th className="p-4 print:p-1.5 border-b-2 border-r-2 border-gray-500 print-border-b-2 print-border-r-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray w-1/4">Block Focus</th>
-                                  <th className="p-4 print:p-1.5 border-b-2 border-gray-500 print-border-b-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray">Activity & Mechanics</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {config.blocks.map((block, index) => {
-                                  const currentCount = studentCounts[day];
-                                  const selectedActId = derivedPlan[`${day}-${block.id}`];
-                                  const selectedAct = repository.find(a => a.id === selectedActId);
-                                  const isLast = index === config.blocks.length - 1;
+                      {/* Daily Blocks Table */}
+                      <div className="border-2 border-gray-500 print-border-2 rounded-xl overflow-hidden bg-white">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="p-4 print:p-1.5 border-b-2 border-r-2 border-gray-500 print-border-b-2 print-border-r-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray w-1/4">Block Focus</th>
+                              <th className="p-4 print:p-1.5 border-b-2 border-gray-500 print-border-b-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray">Activity & Mechanics</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {config.blocks.map((block, index) => {
+                              const currentCount = studentCounts[day];
+                              const selectedActId = derivedPlan[`${day}-${block.id}`];
+                              const selectedAct = repository.find(a => a.id === selectedActId);
+                              const isLast = index === config.blocks.length - 1;
 
-                                  return (
-                                    <tr key={block.id}>
-                                      <td className={`p-4 print:p-1.5 border-r-2 border-gray-500 print-border-r-2 bg-gray-50 print-bg-gray text-base print:text-[11px] font-bold text-gray-800 print-text-black align-top ${!isLast ? 'border-b-2 print-border-b-2' : ''}`}>
-                                        {block.label}
-                                      </td>
-                                      <td className={`p-4 print:p-1.5 align-top bg-white ${!isLast ? 'border-b-2 border-gray-500 print-border-b-2' : ''}`}>
-                                        
-                                        <div className="font-black text-xl print:text-[13px] text-black break-words mb-2 print:mb-1">
-                                          {selectedAct ? (
-                                            <>
-                                              {selectedAct.name}
-                                              {currentCount === 1 && selectedAct.min >= 2 && (
-                                                <span className="text-sm print:text-[10px] text-gray-600 print-text-black font-bold ml-2 print:ml-1">
-                                                  (Teacher acts as a student)
-                                                </span>
-                                              )}
-                                            </>
-                                          ) : 'No activity selected'}
-                                        </div>
-                                        
-                                        {/* Inline Goals, Materials, and Description */}
-                                        {selectedAct && (
-                                          <div className="flex flex-col gap-1.5 print:gap-1.5 mt-1 print:mt-1">
-                                            <div className="flex gap-1.5 print:gap-1.5">
-                                              <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
-                                                <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Goal</div>
-                                                <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">{selectedAct.goal || 'None'}</div>
-                                              </div>
-                                              <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
-                                                <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Materials</div>
-                                                <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">
-                                                  {selectedAct.materials ? formatDescription(selectedAct.materials, currentTargets) : 'None'}
-                                                </div>
-                                              </div>
+                              return (
+                                <tr key={block.id}>
+                                  <td className={`p-4 print:p-1.5 border-r-2 border-gray-500 print-border-r-2 bg-gray-50 print-bg-gray text-base print:text-[11px] font-bold text-gray-800 print-text-black align-top ${!isLast ? 'border-b-2 print-border-b-2' : ''}`}>
+                                    {block.label}
+                                  </td>
+                                  <td className={`p-4 print:p-1.5 align-top bg-white ${!isLast ? 'border-b-2 border-gray-500 print-border-b-2' : ''}`}>
+                                    
+                                    <div className="font-black text-xl print:text-[13px] text-black break-words mb-2 print:mb-1">
+                                      {selectedAct ? (
+                                        <>
+                                          {selectedAct.name}
+                                          {currentCount === 1 && selectedAct.min >= 2 && (
+                                            <span className="text-sm print:text-[10px] text-gray-600 print-text-black font-bold ml-2 print:ml-1">
+                                              (Teacher acts as a student)
+                                            </span>
+                                          )}
+                                        </>
+                                      ) : 'No activity selected'}
+                                    </div>
+                                    
+                                    {/* Inline Goals, Materials, and Description */}
+                                    {selectedAct && (
+                                      <div className="flex flex-col gap-1.5 print:gap-1.5 mt-1 print:mt-1">
+                                        <div className="flex gap-1.5 print:gap-1.5">
+                                          <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
+                                            <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Goal</div>
+                                            <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">{selectedAct.goal || 'None'}</div>
+                                          </div>
+                                          <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
+                                            <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Materials</div>
+                                            <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">
+                                              {selectedAct.materials ? formatDescription(selectedAct.materials, currentTargets) : 'None'}
                                             </div>
-                                            {selectedAct.description && (
-                                              <div className="bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
-                                                <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Description / Mechanics</div>
-                                                <div className="text-base print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug whitespace-normal break-words">
-                                                  {formatDescription(selectedAct.description, currentTargets)}
-                                                </div>
-                                              </div>
-                                            )}
+                                          </div>
+                                        </div>
+                                        {selectedAct.description && (
+                                          <div className="bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
+                                            <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Description / Mechanics</div>
+                                            <div className="text-base print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug whitespace-normal break-words">
+                                              {formatDescription(selectedAct.description, currentTargets)}
+                                            </div>
                                           </div>
                                         )}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </>
-                      )}
+                                      </div>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   );
                 })}
