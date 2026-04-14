@@ -183,7 +183,7 @@
       }
     };
 
-    // --- DRILLS & GAMES REPOSITORY (WITH FOCUS TAGS) ---
+    // --- 70+ DRILLS & GAMES REPOSITORY (WITH FOCUS TAGS) ---
     const initialRepository = [
       // WARM-UPS
       { id: 'wu2', name: 'Six-Second Drill', category: 'Warm-up', focus: 'Conversation', min: 1, max: 12, unit: 'all', materials: 'None', goal: 'Fast-paced repetition and focus.', description: 'Model a sentence 3 times. Have students repeat it 3 times quickly, then raise their hands and yell "Finished!". Add actions (e.g., tap head, stand up).' },
@@ -482,6 +482,50 @@
         );
       }, [repository, searchQuery]);
 
+      const insightsByDay = useMemo(() => {
+        const result = {};
+        weekDays.forEach(day => {
+          result[day] = { materials: [], goals: [] };
+          
+          if (holidays[day]) {
+            result[day].isHoliday = true;
+            return;
+          }
+
+          programConfig[activeProgram].blocks.forEach(block => {
+            const actId = derivedPlan[`${day}-${block.id}`];
+            const act = repository.find(a => a.id === actId);
+            
+            if (act) {
+              if (act.materials && act.materials.trim() !== '' && act.materials.toLowerCase() !== 'none') {
+                result[day].materials.push({ name: act.name, text: formatDescription(act.materials.trim(), targets[activeProgram]) });
+              }
+              if (act.goal && act.goal.trim() !== '') {
+                result[day].goals.push({ name: act.name, text: act.goal.trim() });
+              }
+            }
+          });
+          
+          const uniqueMats = [];
+          const matKeys = new Set();
+          result[day].materials.forEach(m => {
+            const key = `${m.name}:${m.text}`;
+            if(!matKeys.has(key)) { matKeys.add(key); uniqueMats.push(m); }
+          });
+          result[day].materials = uniqueMats;
+
+          const uniqueGoals = [];
+          const goalKeys = new Set();
+          result[day].goals.forEach(g => {
+            const key = `${g.name}:${g.text}`;
+            if(!goalKeys.has(key)) { goalKeys.add(key); uniqueGoals.push(g); }
+          });
+          result[day].goals = uniqueGoals;
+        });
+        
+        return result;
+      }, [derivedPlan, repository, activeProgram, holidays, targets]);
+
       const exportToExcel = () => {
         const currentBlocks = programConfig[activeProgram].blocks;
         const currentTargets = targets[activeProgram];
@@ -769,11 +813,6 @@
                                         <div className="text-sm text-gray-800 font-medium leading-snug">
                                           {formatDescription(selectedAct.description, currentTargets)}
                                         </div>
-                                        {studentCount === 1 && selectedAct.min >= 2 && (
-                                          <div className="text-[11px] text-orange-600 font-bold mt-1">
-                                            * Designed for 2+ students (Teacher acts as a student)
-                                          </div>
-                                        )}
                                       </div>
                                     )}
                                   </div>
