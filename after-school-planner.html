@@ -771,26 +771,32 @@
                               </div>
                               
                               <div className="w-full md:w-2/3 flex flex-col gap-3">
-                                <select
-                                  value={selectedActId || ''}
-                                  onChange={(e) => updatePlan(activeDay, block.id, e.target.value)}
-                                  disabled={isSingle}
-                                  className={`w-full p-3 rounded-lg border text-sm font-bold outline-none shadow-sm transition-all
-                                    ${isMissing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-gray-300 focus:ring-2 focus:ring-blue-500'}
-                                    ${isSingle ? 'opacity-100 bg-gray-200 border-gray-400 text-gray-800 cursor-not-allowed' : 'text-gray-900'}
-                                  `}
-                                >
-                                  <option value="">-- Select Activity --</option>
-                                  {validOptions.map(act => {
-                                    const isUsedElsewhere = usedActivityIds.has(act.id) && selectedActId !== act.id;
-                                    const teacherWarning = studentCount === 1 && act.min >= 2 ? '(Teacher acts as a student)' : '';
-                                    return (
-                                      <option key={act.id} value={act.id}>
-                                        {act.name} {isUsedElsewhere ? '(Used this week)' : ''} {teacherWarning}
-                                      </option>
-                                    );
-                                  })}
-                                </select>
+                                <div className="flex flex-col gap-1">
+                                  <select
+                                    value={selectedActId || ''}
+                                    onChange={(e) => updatePlan(activeDay, block.id, e.target.value)}
+                                    disabled={isSingle}
+                                    className={`w-full p-3 rounded-lg border text-sm font-bold outline-none shadow-sm transition-all
+                                      ${isMissing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-gray-300 focus:ring-2 focus:ring-blue-500'}
+                                      ${isSingle ? 'opacity-100 bg-gray-200 border-gray-400 text-gray-800 cursor-not-allowed' : 'text-gray-900'}
+                                    `}
+                                  >
+                                    <option value="">-- Select Activity --</option>
+                                    {validOptions.map(act => {
+                                      const isUsedElsewhere = usedActivityIds.has(act.id) && selectedActId !== act.id;
+                                      return (
+                                        <option key={act.id} value={act.id}>
+                                          {act.name} {isUsedElsewhere ? '(Used this week)' : ''}
+                                        </option>
+                                      );
+                                    })}
+                                  </select>
+                                  {studentCount === 1 && selectedAct && selectedAct.min >= 2 && (
+                                    <div className="text-xs text-orange-600 font-bold px-1">
+                                      * Designed for 2+ students (Teacher acts as a student)
+                                    </div>
+                                  )}
+                                </div>
 
                                 {/* Inline Goals, Materials, and Description */}
                                 {selectedAct && (
@@ -1082,6 +1088,61 @@
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* QUICK ADD MODAL */}
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+                  <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <PlusCircleIcon className="w-5 h-5 text-red-600"/> Quick Add: {newAct.category}
+                  </h3>
+                  <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600"><XIcon className="w-5 h-5"/></button>
+                </div>
+                
+                <form onSubmit={handleAddActivity} className="p-6 space-y-4">
+                  <div className="bg-red-50 text-red-700 p-3 rounded text-sm border border-red-200 font-medium">
+                    Please create a <strong>{targetFocus}</strong> activity that supports <strong>{studentCount} student(s)</strong>.
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Game / Activity Name</label>
+                    <input required type="text" value={newAct.name} onChange={e => setNewAct({...newAct, name: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                     <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Materials Needed</label>
+                      <input type="text" value={newAct.materials} onChange={e => setNewAct({...newAct, materials: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="(Leave blank for None)" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Focus</label>
+                      <select value={newAct.focus} onChange={e => setNewAct({...newAct, focus: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50">
+                        <option value="Both">Both</option>
+                        <option value="Conversation">Conversation</option>
+                        <option value="Literacy">Literacy</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Goal</label>
+                    <input type="text" value={newAct.goal} onChange={e => setNewAct({...newAct, goal: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Mechanics (How to play)</label>
+                    <textarea rows="3" value={newAct.description} onChange={e => setNewAct({...newAct, description: e.target.value})} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none resize-y" placeholder="Brief instructions for the teacher..."></textarea>
+                  </div>
+                  
+                  <div className="pt-2 flex justify-end gap-3 border-t mt-4">
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded">Cancel</button>
+                    <button type="submit" className="px-6 py-2 bg-blue-600 text-white font-bold rounded shadow-sm hover:bg-blue-700">Save & Add to Plan</button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
