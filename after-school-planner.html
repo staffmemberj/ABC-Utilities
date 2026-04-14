@@ -87,6 +87,7 @@
     const DatabaseIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>;
     const PrinterIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>;
     const DownloadIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
+    const UploadIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
     const ShuffleIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 3 21 3 21 8"/><line x1="4" x2="21" y1="20" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" x2="21" y1="15" y2="21"/><line x1="4" x2="9" y1="4" y2="9"/></svg>;
     const UsersIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
     const Trash2Icon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
@@ -96,6 +97,8 @@
     const PlusCircleIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="16"/><line x1="8" x2="16" y1="12" y2="12"/></svg>;
     const PalmtreeIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4"/><path d="M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3"/><path d="M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35z"/><path d="M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/></svg>;
     const SearchIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
+    const ClipboardListIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>;
+    const UserPlusIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>;
 
     // --- DYNAMIC TEXT FORMATTER ---
     const formatDescription = (desc, targets) => {
@@ -297,13 +300,21 @@
       const [selectedBook, setSelectedBook] = useState('lb1');
       const [selectedUnit, setSelectedUnit] = useState(1);
 
+      // --- ROSTER STATE ---
+      const [roster, setRoster] = useState([
+        { id: generateId(), name: '', schedule: { 'Monday': 'None', 'Tuesday': 'None', 'Wednesday': 'None', 'Thursday': 'None', 'Friday': 'None' } }
+      ]);
+
       // HOLIDAYS STATE
       const [holidays, setHolidays] = useState({ 'Monday': false, 'Tuesday': false, 'Wednesday': false, 'Thursday': false, 'Friday': false });
 
-      // --- NEW: Daily Student Counts & Holidays ---
-      const [studentCounts, setStudentCounts] = useState({
-        'Monday': 1, 'Tuesday': 1, 'Wednesday': 1, 'Thursday': 1, 'Friday': 1
-      });
+      // Get accurate student counts per day based on the roster and currently active program
+      const getStudentCount = (day, program) => {
+        return roster.filter(s => s.schedule[day] === program || s.schedule[day] === 'Both').length;
+      };
+
+      // Determine if a day is completely off (explicit holiday or zero students)
+      const isDayOff = (day) => holidays[day] || getStudentCount(day, activeProgram) === 0;
 
       // UPDATED: Added book and unit tracking to targets state
       const [targets, setTargets] = useState({
@@ -325,9 +336,10 @@
         const targetFocus = activeProgram === 'fun' ? 'Conversation' : 'Literacy';
         
         weekDays.forEach(day => {
-          if (holidays[day]) return;
+          if (isDayOff(day)) return;
           
-          const currentEffectiveCount = studentCounts[day] === 1 ? 2 : studentCounts[day];
+          const rawCount = getStudentCount(day, activeProgram);
+          const currentEffectiveCount = rawCount <= 1 ? 2 : rawCount; // Teacher steps in if 0 or 1 student to guarantee plan generation
 
           currentBlocks.forEach(block => {
             const validOptions = repository.filter(a => 
@@ -348,7 +360,7 @@
           });
         });
         return newPlan;
-      }, [plans, activeProgram, repository, studentCounts, holidays]);
+      }, [plans, activeProgram, repository, roster, holidays]);
 
       useEffect(() => {
         setPlans(prev => {
@@ -406,9 +418,10 @@
         categories.forEach(cat => usedCategoryIds[cat] = new Set());
 
         weekDays.forEach(day => {
-          if (holidays[day]) return;
+          if (isDayOff(day)) return;
           
-          const currentEffectiveCount = studentCounts[day] === 1 ? 2 : studentCounts[day];
+          const rawCount = getStudentCount(day, activeProgram);
+          const currentEffectiveCount = rawCount <= 1 ? 2 : rawCount;
 
           currentBlocks.forEach(block => {
             // 1. Try unused activity matching the specific unit tag & exact focus
@@ -462,7 +475,8 @@
 
       const openQuickAddModal = (categoryPref) => {
         const targetFocus = activeProgram === 'fun' ? 'Conversation' : 'Literacy';
-        const currentCount = studentCounts[activeDay];
+        const rawCount = getStudentCount(activeDay, activeProgram);
+        const currentCount = rawCount === 0 ? 1 : rawCount;
         setNewAct({ 
           name: '', category: categoryPref, focus: targetFocus, min: 1, max: currentCount > 12 ? 12 : currentCount, 
           unit: selectedBook && selectedUnit ? `${selectedBook}-${selectedUnit}` : 'all', 
@@ -481,6 +495,51 @@
 
       const removeActivity = (id) => {
         setRepository(repository.filter(a => a.id !== id));
+      };
+
+      // --- ROSTER HANDLERS ---
+      const addStudentToRoster = () => {
+        setRoster([...roster, { id: generateId(), name: '', schedule: { 'Monday': 'None', 'Tuesday': 'None', 'Wednesday': 'None', 'Thursday': 'None', 'Friday': 'None' } }]);
+      };
+
+      const updateStudentName = (id, newName) => {
+        setRoster(roster.map(s => s.id === id ? { ...s, name: newName } : s));
+      };
+
+      const updateStudentSchedule = (id, day, newSchedule) => {
+        setRoster(roster.map(s => s.id === id ? { ...s, schedule: { ...s.schedule, [day]: newSchedule } } : s));
+      };
+
+      const removeStudentFromRoster = (id) => {
+        setRoster(roster.filter(s => s.id !== id));
+      };
+
+      const handleExportRoster = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(roster, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "abc_roster.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+      };
+
+      const handleImportRoster = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const parsed = JSON.parse(e.target.result);
+            if (Array.isArray(parsed)) {
+              setRoster(parsed);
+            }
+          } catch (err) {
+            console.error("Invalid roster file", err);
+          }
+          event.target.value = null; // reset input
+        };
+        reader.readAsText(file);
       };
 
       // --- FILTER FOR REPOSITORY SEARCH ---
@@ -502,7 +561,7 @@
         weekDays.forEach(day => {
           result[day] = { materials: [], goals: [] };
           
-          if (holidays[day]) {
+          if (isDayOff(day)) {
             result[day].isHoliday = true;
             return;
           }
@@ -539,7 +598,7 @@
         });
         
         return result;
-      }, [derivedPlan, repository, activeProgram, holidays, targets]);
+      }, [derivedPlan, repository, activeProgram, holidays, targets, roster]);
 
       const exportToExcel = () => {
         const currentBlocks = programConfig[activeProgram].blocks;
@@ -557,7 +616,7 @@
         planData.push(['Target Phonics', currentTargets.phonics]);
         planData.push([]);
         
-        const activeWeekDays = weekDays.filter(day => !holidays[day]);
+        const activeWeekDays = weekDays.filter(day => !isDayOff(day));
         
         planData.push(['Block Focus', ...activeWeekDays]);
         
@@ -620,7 +679,7 @@
       const currentPlanValues = Object.values(derivedPlan).filter(val => val !== '');
       const usedActivityIds = new Set(currentPlanValues);
       
-      const printableDays = weekDays.filter(day => !holidays[day]);
+      const printableDays = weekDays.filter(day => !isDayOff(day));
 
       return (
         <div className="min-h-screen print:min-h-0 p-4 sm:p-8 print:p-0 relative">
@@ -629,10 +688,79 @@
             <button onClick={() => setActiveTab('planner')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'planner' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <CalendarIcon className="w-5 h-5" /> Weekly Planner
             </button>
+            <button onClick={() => setActiveTab('attendance')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'attendance' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+              <ClipboardListIcon className="w-5 h-5" /> Student Attendance
+            </button>
             <button onClick={() => setActiveTab('repository')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'repository' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
               <DatabaseIcon className="w-5 h-5" /> Activity Repository
             </button>
           </div>
+
+          {activeTab === 'attendance' && (
+            <div className="max-w-7xl mx-auto space-y-6 no-print">
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                <p className="text-blue-800 text-sm">
+                  <strong>Master Attendance Roster:</strong> The students and schedules you enter here will automatically update the "Daily Settings" student counts on your Weekly Planner. 
+                  When you print your lesson plan, each day's specific roster will automatically print on the back!
+                </p>
+              </div>
+              <div className="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden">
+                 <div className="p-4 sm:p-6 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                   <h2 className="text-xl font-bold text-gray-800">Student Roster & Weekly Schedule</h2>
+                   <div className="flex flex-wrap items-center gap-2">
+                      <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md text-sm font-bold hover:bg-indigo-100 transition-colors cursor-pointer shadow-sm">
+                        <UploadIcon className="w-4 h-4" />
+                        Import
+                        <input type="file" accept=".json" onChange={handleImportRoster} className="hidden" />
+                      </label>
+                      <button onClick={handleExportRoster} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md text-sm font-bold hover:bg-indigo-100 transition-colors shadow-sm">
+                        <DownloadIcon className="w-4 h-4" />
+                        Export
+                      </button>
+                      <button onClick={addStudentToRoster} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700 shadow-sm transition-colors">
+                        <UserPlusIcon className="w-4 h-4"/> Add Student
+                      </button>
+                   </div>
+                 </div>
+                 <div className="overflow-x-auto">
+                   <table className="w-full text-left border-collapse">
+                     <thead>
+                       <tr className="bg-gray-100">
+                         <th className="p-4 border-b border-gray-200 text-sm font-bold text-gray-700 w-48">Student Name</th>
+                         {weekDays.map(day => <th key={day} className="p-4 border-b border-gray-200 text-sm font-bold text-gray-700 text-center min-w-[120px]">{day}</th>)}
+                         <th className="p-4 border-b border-gray-200 text-sm font-bold text-gray-700 w-16 text-center">Actions</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {roster.map(student => (
+                          <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                             <td className="p-2">
+                               <input type="text" value={student.name} onChange={e => updateStudentName(student.id, e.target.value)} placeholder="Student Name" className="w-full p-2.5 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-500 font-medium" />
+                             </td>
+                             {weekDays.map(day => (
+                               <td key={day} className="p-2 text-center">
+                                 <select value={student.schedule[day]} onChange={e => updateStudentSchedule(student.id, day, e.target.value)} className={`w-full p-2.5 border rounded text-sm outline-none focus:ring-2 focus:ring-blue-500 font-bold transition-colors ${student.schedule[day] === 'None' ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-blue-300 text-blue-700 shadow-sm'}`}>
+                                   <option value="None">- Off -</option>
+                                   <option value="fun">Fun English</option>
+                                   <option value="step">Step English</option>
+                                   <option value="Both">Both Classes</option>
+                                 </select>
+                               </td>
+                             ))}
+                             <td className="p-2 text-center">
+                               <button onClick={() => removeStudentFromRoster(student.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Delete Student">
+                                 <Trash2Icon className="w-5 h-5 mx-auto"/>
+                               </button>
+                             </td>
+                          </tr>
+                       ))}
+                     </tbody>
+                   </table>
+                   {roster.length === 0 && <div className="p-12 text-center text-gray-500 font-medium">No students added to the roster yet.</div>}
+                 </div>
+              </div>
+            </div>
+          )}
 
           {activeTab === 'planner' && (
             <>
@@ -683,42 +811,41 @@
                        <CalendarIcon className="w-5 h-5" /> Daily Settings:
                      </div>
                      <div className="flex gap-3 overflow-x-auto w-full pb-2 lg:pb-0 scrollbar-hide">
-                       {weekDays.map(day => (
-                         <div key={day} className={`flex flex-col gap-2 p-2.5 rounded-lg border min-w-[130px] transition-colors ${holidays[day] ? 'bg-gray-100 border-gray-200' : 'bg-blue-50 border-blue-200 shadow-sm'}`}>
-                           <div className="flex justify-between items-center">
-                             <span className={`text-sm font-bold ${holidays[day] ? 'text-gray-400' : 'text-gray-800'}`}>{day}</span>
-                             <label className="flex items-center gap-1 cursor-pointer">
-                               <input 
-                                 type="checkbox" 
-                                 checked={holidays[day]} 
-                                 onChange={(e) => setHolidays(prev => ({...prev, [day]: e.target.checked}))} 
-                                 className="w-3.5 h-3.5 text-red-500 rounded cursor-pointer" 
-                                 title="Mark as Holiday"
-                               />
-                               <span className="text-[10px] text-gray-500 font-bold uppercase">Off</span>
-                             </label>
-                           </div>
-                           {!holidays[day] ? (
-                             <div className="flex items-center justify-between bg-white px-2 py-1 rounded border border-blue-100">
-                               <div className="flex items-center gap-1 text-gray-500">
-                                 <UsersIcon className="w-3.5 h-3.5" />
-                                 <span className="text-[10px] font-bold uppercase">Students</span>
-                               </div>
-                               <input 
-                                 type="number" 
-                                 min="1" max="12" 
-                                 value={studentCounts[day]} 
-                                 onChange={(e) => setStudentCounts(prev => ({...prev, [day]: Number(e.target.value)}))} 
-                                 className="w-10 text-sm bg-transparent text-right font-bold outline-none text-blue-700 focus:ring-1 focus:ring-blue-500" 
-                               />
+                       {weekDays.map(day => {
+                         const rawCount = getStudentCount(day, activeProgram);
+                         const dayOff = isDayOff(day);
+                         
+                         return (
+                           <div key={day} className={`flex flex-col gap-2 p-2.5 rounded-lg border w-40 shrink-0 transition-colors ${dayOff ? 'bg-gray-100 border-gray-200' : 'bg-blue-50 border-blue-200 shadow-sm'}`}>
+                             <div className="flex justify-between items-center">
+                               <span className={`text-sm font-bold ${dayOff ? 'text-gray-400' : 'text-gray-800'}`}>{day}</span>
+                               <label className="flex items-center gap-1 cursor-pointer">
+                                 <input 
+                                   type="checkbox" 
+                                   checked={holidays[day]} 
+                                   onChange={(e) => setHolidays(prev => ({...prev, [day]: e.target.checked}))} 
+                                   className="w-3.5 h-3.5 text-red-500 rounded cursor-pointer" 
+                                   title="Mark as Holiday"
+                                 />
+                                 <span className="text-[10px] text-gray-500 font-bold uppercase">Off</span>
+                               </label>
                              </div>
-                           ) : (
-                              <div className="flex items-center justify-center bg-gray-200/50 px-2 py-1 rounded border border-gray-200 h-[30px] text-[11px] font-bold text-gray-400">
-                                No Class
-                              </div>
-                           )}
-                         </div>
-                       ))}
+                             {!dayOff ? (
+                               <div className="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-blue-100">
+                                 <div className="flex items-center gap-1 text-gray-500">
+                                   <UsersIcon className="w-3.5 h-3.5" />
+                                   <span className="text-[10px] font-bold uppercase">Students</span>
+                                 </div>
+                                 <span className="text-sm font-black text-blue-700 pr-1">{rawCount}</span>
+                               </div>
+                             ) : (
+                                <div className="flex items-center justify-center bg-gray-200/50 px-2 py-1.5 rounded border border-gray-200 text-[11px] font-bold text-gray-400">
+                                  No Class
+                                </div>
+                             )}
+                           </div>
+                         );
+                       })}
                      </div>
                   </div>
 
@@ -741,21 +868,24 @@
                 {/* Daily Editor */}
                 <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
                   <div className="flex border-b-2 border-gray-300 bg-gray-100">
-                    {weekDays.map(day => (
-                      <button
-                        key={day}
-                        onClick={() => setActiveDay(day)}
-                        className={`flex-1 py-4 text-center font-black text-sm sm:text-base transition-colors ${
-                          activeDay === day
-                            ? 'bg-white text-blue-700 border-b-4 border-blue-600'
-                            : holidays[day] 
-                              ? 'text-gray-400 hover:bg-gray-200 border-b-4 border-transparent'
-                              : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200 border-b-4 border-transparent'
-                        }`}
-                      >
-                        {day} {holidays[day] && <span className="text-[10px] block font-normal">(Holiday)</span>}
-                      </button>
-                    ))}
+                    {weekDays.map(day => {
+                      const dayOff = isDayOff(day);
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => setActiveDay(day)}
+                          className={`flex-1 py-4 text-center font-black text-sm sm:text-base transition-colors ${
+                            activeDay === day
+                              ? 'bg-white text-blue-700 border-b-4 border-blue-600'
+                              : dayOff 
+                                ? 'text-gray-400 hover:bg-gray-200 border-b-4 border-transparent'
+                                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200 border-b-4 border-transparent'
+                          }`}
+                        >
+                          {day} {dayOff && <span className="text-[10px] block font-normal">(No Class)</span>}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="bg-white min-h-[300px]">
@@ -770,17 +900,17 @@
                         </div>
                       </div>
 
-                      {holidays[activeDay] ? (
+                      {isDayOff(activeDay) ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
                           <PalmtreeIcon className="w-12 h-12 text-gray-300 mb-3" />
-                          <h3 className="text-xl font-bold text-gray-500">Holiday</h3>
+                          <h3 className="text-xl font-bold text-gray-500">No Class</h3>
                           <p className="text-gray-400 mt-2 font-medium">No lessons scheduled for this day.</p>
-                          <p className="text-xs text-gray-400 mt-1">To enable scheduling, uncheck this day in the Daily Settings above.</p>
+                          <p className="text-xs text-gray-400 mt-1">To enable scheduling, add students to the roster or uncheck the holiday toggle.</p>
                         </div>
                       ) : (
                         config.blocks.map(block => {
-                          const currentCount = studentCounts[activeDay];
-                          const currentEffectiveCount = currentCount === 1 ? 2 : currentCount;
+                          const rawCount = getStudentCount(activeDay, activeProgram);
+                          const currentEffectiveCount = rawCount <= 1 ? 2 : rawCount;
 
                           const validOptions = repository.filter(a => 
                             block.allowedTypes.includes(a.category) && 
@@ -846,7 +976,7 @@
                                         <div className="text-sm text-gray-800 font-medium leading-snug">
                                           {formatDescription(selectedAct.description, currentTargets)}
                                         </div>
-                                        {currentCount === 1 && selectedAct.min >= 2 && (
+                                        {rawCount <= 1 && selectedAct.min >= 2 && (
                                           <div className="text-xs text-orange-600 font-bold mt-1">
                                             * Designed for 2+ students (Teacher acts as a student)
                                           </div>
@@ -877,119 +1007,167 @@
               <div className="hidden print:block w-full">
                 {printableDays.length === 0 && (
                   <div className="print-text-black p-10 text-center text-xl font-bold">
-                    All days are marked as Holiday. Nothing to print.
+                    All days are marked as Holiday or have 0 students. Nothing to print.
                   </div>
                 )}
                 {printableDays.map((day, dayIndex) => {
                   return (
-                    <div key={`print-${day}`} className={`w-full ${dayIndex < printableDays.length - 1 ? 'print-break-after' : ''}`}>
-                      
-                      {/* Header */}
-                      <div className="border-2 border-gray-500 print-border-2 rounded-xl mb-6 print:mb-2 bg-white overflow-hidden print-avoid-break">
-                        <div className="p-5 print:p-2 border-b-2 border-gray-500 print-border-b-2 flex justify-between items-center bg-white">
-                          <div>
-                            <h1 className="text-3xl print:text-lg font-black text-gray-800 print-text-black flex items-center">
-                              {day} <span className="text-xl print:text-sm font-bold text-gray-500 mx-2">|</span> ABC Garden • {config.name}
-                            </h1>
-                            <div className="flex items-center gap-3 print:gap-2 mt-2 print:mt-1">
-                              <p className="text-lg print:text-[11px] text-gray-600 font-bold print-text-black">{config.duration}</p>
-                              {currentTargets.book && currentTargets.unit && (
-                                <>
-                                  <span className="text-gray-400 print:text-gray-500 font-bold print-text-black">|</span>
-                                  <p className="text-xl print:text-[11px] text-blue-800 print-text-black font-black">
-                                    {currentTargets.book} : {currentTargets.unit}
-                                  </p>
-                                </>
-                              )}
+                    <React.Fragment key={`print-group-${day}`}>
+                      {/* --- LESSON PLAN PAGE --- */}
+                      <div className="w-full print-break-after">
+                        {/* Header */}
+                        <div className="border-2 border-gray-500 print-border-2 rounded-xl mb-6 print:mb-2 bg-white overflow-hidden print-avoid-break">
+                          <div className="p-5 print:p-2 border-b-2 border-gray-500 print-border-b-2 flex justify-between items-center bg-white">
+                            <div>
+                              <h1 className="text-3xl print:text-lg font-black text-gray-800 print-text-black flex items-center">
+                                {day} <span className="text-xl print:text-sm font-bold text-gray-500 mx-2">|</span> ABC Garden • {config.name}
+                              </h1>
+                              <div className="flex items-center gap-3 print:gap-2 mt-2 print:mt-1">
+                                <p className="text-lg print:text-[11px] text-gray-600 font-bold print-text-black">{config.duration}</p>
+                                {currentTargets.book && currentTargets.unit && (
+                                  <>
+                                    <span className="text-gray-400 print:text-gray-500 font-bold print-text-black">|</span>
+                                    <p className="text-xl print:text-[11px] text-blue-800 print-text-black font-black">
+                                      {currentTargets.book} : {currentTargets.unit}
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-6 print:gap-2 bg-gray-50 print-bg-gray p-5 print:p-2">
+                            <div>
+                              <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Vocabulary</label>
+                              <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{currentTargets.vocab || '\u00A0'}</div>
+                            </div>
+                            <div>
+                              <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Sentences</label>
+                              <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{currentTargets.sentences || '\u00A0'}</div>
+                            </div>
+                            <div>
+                              <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Phonics</label>
+                              <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{currentTargets.phonics || '\u00A0'}</div>
                             </div>
                           </div>
                         </div>
-                        
-                        <div className="grid grid-cols-3 gap-6 print:gap-2 bg-gray-50 print-bg-gray p-5 print:p-2">
-                          <div>
-                            <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Vocabulary</label>
-                            <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{currentTargets.vocab || '\u00A0'}</div>
-                          </div>
-                          <div>
-                            <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Sentences</label>
-                            <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{currentTargets.sentences || '\u00A0'}</div>
-                          </div>
-                          <div>
-                            <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Phonics</label>
-                            <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{currentTargets.phonics || '\u00A0'}</div>
-                          </div>
+
+                        {/* Daily Blocks Table */}
+                        <div className="border-2 border-gray-500 print-border-2 rounded-xl overflow-hidden bg-white">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr>
+                                <th className="p-4 print:p-1.5 border-b-2 border-r-2 border-gray-500 print-border-b-2 print-border-r-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray w-1/4">Block Focus</th>
+                                <th className="p-4 print:p-1.5 border-b-2 border-gray-500 print-border-b-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray">Activity & Mechanics</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {config.blocks.map((block, index) => {
+                                const rawCount = getStudentCount(day, activeProgram);
+                                const selectedActId = derivedPlan[`${day}-${block.id}`];
+                                const selectedAct = repository.find(a => a.id === selectedActId);
+                                const isLast = index === config.blocks.length - 1;
+
+                                return (
+                                  <tr key={block.id}>
+                                    <td className={`p-4 print:p-1.5 border-r-2 border-gray-500 print-border-r-2 bg-gray-50 print-bg-gray text-base print:text-[11px] font-bold text-gray-800 print-text-black align-top ${!isLast ? 'border-b-2 print-border-b-2' : ''}`}>
+                                      {block.label}
+                                    </td>
+                                    <td className={`p-4 print:p-1.5 align-top bg-white ${!isLast ? 'border-b-2 border-gray-500 print-border-b-2' : ''}`}>
+                                      
+                                      <div className="font-black text-xl print:text-[13px] text-black break-words mb-2 print:mb-1">
+                                        {selectedAct ? (
+                                          <>
+                                            {selectedAct.name}
+                                            {rawCount <= 1 && selectedAct.min >= 2 && (
+                                              <span className="text-sm print:text-[10px] text-gray-600 print-text-black font-bold ml-2 print:ml-1">
+                                                (Teacher acts as a student)
+                                              </span>
+                                            )}
+                                          </>
+                                        ) : 'No activity selected'}
+                                      </div>
+                                      
+                                      {/* Inline Goals, Materials, and Description */}
+                                      {selectedAct && (
+                                        <div className="flex flex-col gap-1.5 print:gap-1.5 mt-1 print:mt-1">
+                                          <div className="flex gap-1.5 print:gap-1.5">
+                                            <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
+                                              <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Goal</div>
+                                              <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">{selectedAct.goal || 'None'}</div>
+                                            </div>
+                                            <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
+                                              <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Materials</div>
+                                              <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">
+                                                {selectedAct.materials ? formatDescription(selectedAct.materials, currentTargets) : 'None'}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          {selectedAct.description && (
+                                            <div className="bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
+                                              <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Description / Mechanics</div>
+                                              <div className="text-base print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug whitespace-normal break-words">
+                                                {formatDescription(selectedAct.description, currentTargets)}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
 
-                      {/* Daily Blocks Table */}
-                      <div className="border-2 border-gray-500 print-border-2 rounded-xl overflow-hidden bg-white">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="p-4 print:p-1.5 border-b-2 border-r-2 border-gray-500 print-border-b-2 print-border-r-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray w-1/4">Block Focus</th>
-                              <th className="p-4 print:p-1.5 border-b-2 border-gray-500 print-border-b-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray">Activity & Mechanics</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {config.blocks.map((block, index) => {
-                              const currentCount = studentCounts[day];
-                              const selectedActId = derivedPlan[`${day}-${block.id}`];
-                              const selectedAct = repository.find(a => a.id === selectedActId);
-                              const isLast = index === config.blocks.length - 1;
+                      {/* --- ROSTER PAGE (Prints on the back) --- */}
+                      <div className={`w-full flex flex-col gap-6 print:gap-4 print:min-h-[260mm] mt-12 print:mt-0 ${dayIndex < printableDays.length - 1 ? 'print-break-after' : ''}`}>
+                         <div className="border-2 border-gray-500 print-border-2 rounded-xl bg-white overflow-hidden print-avoid-break shrink-0">
+                            <div className="p-5 print:p-4 border-b-2 border-gray-500 print-border-b-2 flex justify-between items-center bg-gray-50 print-bg-gray">
+                               <h1 className="text-3xl print:text-xl font-black text-gray-800 print-text-black flex items-center">
+                                 {day} Class Roster <span className="text-xl print:text-sm font-bold text-gray-500 mx-2">|</span> {config.name}
+                               </h1>
+                            </div>
+                            <table className="w-full text-left border-collapse">
+                               <thead>
+                                  <tr>
+                                     <th className="p-4 print:p-3 border-b-2 border-r-2 border-gray-500 print-border-b-2 print-border-r-2 font-black text-lg print:text-sm text-gray-800 bg-gray-100 print-bg-gray w-5/6">Student Name</th>
+                                     <th className="p-4 print:p-3 border-b-2 border-gray-500 print-border-b-2 font-black text-lg print:text-sm text-gray-800 bg-gray-100 print-bg-gray w-1/6 text-center">Attendance</th>
+                                  </tr>
+                               </thead>
+                               <tbody>
+                                  {roster.filter(s => s.schedule[day] === activeProgram || s.schedule[day] === 'Both').map((student, i, arr) => (
+                                     <tr key={student.id}>
+                                        <td className={`p-4 print:p-3 border-r-2 border-gray-500 print-border-r-2 text-xl print:text-base font-bold text-gray-800 print-text-black ${i !== arr.length - 1 ? 'border-b-2 print-border-b-2' : ''}`}>
+                                          {student.name || `Student ${i + 1}`}
+                                        </td>
+                                        <td className={`p-4 print:p-3 ${i !== arr.length - 1 ? 'border-b-2 print-border-b-2' : ''}`}>
+                                           <div className="w-6 h-6 print:w-5 print:h-5 border-2 border-gray-400 print-border-2 mx-auto rounded-sm"></div>
+                                        </td>
+                                     </tr>
+                                  ))}
+                                  {roster.filter(s => s.schedule[day] === activeProgram || s.schedule[day] === 'Both').length === 0 && (
+                                     <tr>
+                                        <td colSpan="2" className="p-8 print:p-6 text-center text-gray-500 font-bold text-xl print:text-base">No students scheduled for today.</td>
+                                     </tr>
+                                  )}
+                               </tbody>
+                            </table>
+                         </div>
 
-                              return (
-                                <tr key={block.id}>
-                                  <td className={`p-4 print:p-1.5 border-r-2 border-gray-500 print-border-r-2 bg-gray-50 print-bg-gray text-base print:text-[11px] font-bold text-gray-800 print-text-black align-top ${!isLast ? 'border-b-2 print-border-b-2' : ''}`}>
-                                    {block.label}
-                                  </td>
-                                  <td className={`p-4 print:p-1.5 align-top bg-white ${!isLast ? 'border-b-2 border-gray-500 print-border-b-2' : ''}`}>
-                                    
-                                    <div className="font-black text-xl print:text-[13px] text-black break-words mb-2 print:mb-1">
-                                      {selectedAct ? (
-                                        <>
-                                          {selectedAct.name}
-                                          {currentCount === 1 && selectedAct.min >= 2 && (
-                                            <span className="text-sm print:text-[10px] text-gray-600 print-text-black font-bold ml-2 print:ml-1">
-                                              (Teacher acts as a student)
-                                            </span>
-                                          )}
-                                        </>
-                                      ) : 'No activity selected'}
-                                    </div>
-                                    
-                                    {/* Inline Goals, Materials, and Description */}
-                                    {selectedAct && (
-                                      <div className="flex flex-col gap-1.5 print:gap-1.5 mt-1 print:mt-1">
-                                        <div className="flex gap-1.5 print:gap-1.5">
-                                          <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
-                                            <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Goal</div>
-                                            <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">{selectedAct.goal || 'None'}</div>
-                                          </div>
-                                          <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
-                                            <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Materials</div>
-                                            <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">
-                                              {selectedAct.materials ? formatDescription(selectedAct.materials, currentTargets) : 'None'}
-                                            </div>
-                                          </div>
-                                        </div>
-                                        {selectedAct.description && (
-                                          <div className="bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
-                                            <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Description / Mechanics</div>
-                                            <div className="text-base print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug whitespace-normal break-words">
-                                              {formatDescription(selectedAct.description, currentTargets)}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                         {/* Notes Section (Giant White Space) */}
+                         <div className="border-2 border-gray-500 print-border-2 rounded-xl bg-white overflow-hidden flex-1 flex flex-col min-h-[200px] print:min-h-0">
+                            <div className="p-5 print:p-3 border-b-2 border-gray-500 print-border-b-2 flex items-center bg-gray-50 print-bg-gray shrink-0">
+                               <h2 className="text-2xl print:text-base font-black text-gray-800 print-text-black">
+                                 Notes
+                               </h2>
+                            </div>
+                            <div className="flex-1 w-full bg-white print:bg-white"></div>
+                         </div>
                       </div>
-                    </div>
+                    </React.Fragment>
                   );
                 })}
               </div>
