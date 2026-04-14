@@ -183,7 +183,7 @@
       }
     };
 
-    // --- 70+ DRILLS & GAMES REPOSITORY (WITH FOCUS TAGS) ---
+    // --- DRILLS & GAMES REPOSITORY (WITH FOCUS TAGS) ---
     const initialRepository = [
       // WARM-UPS
       { id: 'wu2', name: 'Six-Second Drill', category: 'Warm-up', focus: 'Conversation', min: 1, max: 12, unit: 'all', materials: 'None', goal: 'Fast-paced repetition and focus.', description: 'Model a sentence 3 times. Have students repeat it 3 times quickly, then raise their hands and yell "Finished!". Add actions (e.g., tap head, stand up).' },
@@ -274,7 +274,6 @@
       { id: 'd7', name: 'Pair Dictation', category: 'Desk Work', focus: 'Literacy', min: 2, max: 12, unit: 'all', materials: 'Paper, Pencils', goal: 'Listening and writing.', description: 'S1 dictates an image or letter (e.g., "Number 1 is A"). S2 draws/writes it. Compare papers at the end and reverse roles.' },
 
       // WRAP-UP
-      { id: 'r1', name: 'The Goodbye Song', category: 'Wrap-up', focus: 'Both', min: 1, max: 12, unit: 'all', materials: 'Tablet (Audio/Video - Goodbye Song)', goal: 'Closing routine.', description: 'Play the Goodbye Song. Students sing along and wave goodbye to their classmates and the teacher.' },
       { id: 'r2', name: 'Hot Potato', category: 'Wrap-up', focus: 'Conversation', min: 3, max: 12, unit: 'all', materials: 'Beanbag or Ball, Tablet (Audio/Video - Background Music)', goal: 'Fun review under pressure.', description: 'Play music on the tablet. Students pass a ball. Stop the music. The student holding the ball must answer a review question.' },
       { id: 'r3', name: 'How Many Steps?', category: 'Wrap-up', focus: 'Conversation', min: 2, max: 12, unit: 'all', materials: 'None', goal: 'Physical counting.', description: 'Students stand across the room. They ask "How many steps?". You answer "Two big steps". First to reach you is the next teacher.' },
       { id: 'r4', name: 'Stop the Music', category: 'Wrap-up', focus: 'Both', min: 4, max: 12, unit: 'all', materials: 'Tablet (Audio/Video - Background Music), Picture Cards', goal: 'Target mixing.', description: 'Students march to music with a card. Stop the music. They must find a partner, exchange Q&A using their cards, and swap cards.' },
@@ -520,9 +519,44 @@
           planData.push(row);
         });
 
+        // Retain the insights data for the second Excel sheet
+        const insightsData = [];
+        insightsData.push([`${programConfig[activeProgram].name} - Daily Insights`]);
+        insightsData.push([]);
+        
+        weekDays.forEach(day => {
+          insightsData.push([`--- ${day} ---`]);
+          if (holidays[day]) {
+            insightsData.push(['Goals', 'Holiday']);
+            insightsData.push(['Materials', 'Holiday']);
+          } else {
+            const mats = [];
+            const goals = [];
+            currentBlocks.forEach(block => {
+              const actId = derivedPlan[`${day}-${block.id}`];
+              const act = repository.find(a => a.id === actId);
+              if (act) {
+                if (act.materials && act.materials.trim() !== '' && act.materials.toLowerCase() !== 'none') {
+                  mats.push(`${act.name}: ${formatDescription(act.materials.trim(), currentTargets)}`);
+                }
+                if (act.goal && act.goal.trim() !== '') {
+                  goals.push(`${act.name}: ${act.goal.trim()}`);
+                }
+              }
+            });
+            insightsData.push(['Goals', goals.length > 0 ? goals.join('\n') : 'None']);
+            insightsData.push(['Materials', mats.length > 0 ? mats.join('\n') : 'None']);
+          }
+          insightsData.push([]);
+        });
+
         const wb = XLSX.utils.book_new();
         const wsPlan = XLSX.utils.aoa_to_sheet(planData);
+        const wsInsights = XLSX.utils.aoa_to_sheet(insightsData);
+        
         XLSX.utils.book_append_sheet(wb, wsPlan, 'Weekly Plan');
+        XLSX.utils.book_append_sheet(wb, wsInsights, 'Materials & Goals');
+        
         XLSX.writeFile(wb, `ABC_Plan_${activeProgram}.xlsx`);
       };
 
@@ -705,9 +739,10 @@
                                   <option value="">-- Select Activity --</option>
                                   {validOptions.map(act => {
                                     const isUsedElsewhere = usedActivityIds.has(act.id) && selectedActId !== act.id;
+                                    const teacherWarning = studentCount === 1 && act.min >= 2 ? '(Teacher acts as a student)' : '';
                                     return (
                                       <option key={act.id} value={act.id}>
-                                        {act.name} {isUsedElsewhere ? '(Used this week)' : ''}
+                                        {act.name} {isUsedElsewhere ? '(Used this week)' : ''} {teacherWarning}
                                       </option>
                                     );
                                   })}
@@ -715,8 +750,8 @@
 
                                 {/* Inline Goals, Materials, and Description */}
                                 {selectedAct && (
-                                  <div className="flex flex-col gap-2 mt-1">
-                                    <div className="flex gap-2">
+                                  <div className="flex flex-col gap-1.5 mt-1">
+                                    <div className="flex gap-1.5">
                                       <div className="flex-1 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm flex flex-col gap-1 justify-start">
                                         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Goal</div>
                                         <div className="text-sm text-gray-800 font-medium leading-snug">{selectedAct.goal || 'None'}</div>
@@ -835,7 +870,16 @@
                                       <td className={`p-4 print:p-1.5 print-border-cell align-top bg-white ${!isLast ? 'border-b-2 border-gray-500 print-border-b' : ''}`}>
                                         
                                         <div className="font-black text-xl print:text-[13px] text-black break-words mb-2 print:mb-1">
-                                          {selectedAct ? selectedAct.name : 'No activity selected'}
+                                          {selectedAct ? (
+                                            <>
+                                              {selectedAct.name}
+                                              {studentCount === 1 && selectedAct.min >= 2 && (
+                                                <span className="text-sm print:text-[10px] text-gray-600 print-text-black font-bold ml-2 print:ml-1">
+                                                  (Teacher acts as a student)
+                                                </span>
+                                              )}
+                                            </>
+                                          ) : 'No activity selected'}
                                         </div>
                                         
                                         {/* Inline Goals, Materials, and Description */}
@@ -859,11 +903,6 @@
                                                 <div className="text-base print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug whitespace-normal break-words">
                                                   {formatDescription(selectedAct.description, currentTargets)}
                                                 </div>
-                                                {studentCount === 1 && selectedAct.min >= 2 && (
-                                                  <div className="text-xs print:text-[8.5px] text-gray-600 print-text-black font-bold mt-1 print:mt-0.5">
-                                                    * Designed for 2+ students (Teacher acts as a student)
-                                                  </div>
-                                                )}
                                               </div>
                                             )}
                                           </div>
