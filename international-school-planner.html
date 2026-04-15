@@ -19,7 +19,7 @@
     }
     
     @media print {
-      @page { size: landscape A4; margin: 8mm; }
+      @page { size: portrait A4; margin: 8mm; }
       html, body, #root { 
         height: auto !important; 
         overflow: visible !important; 
@@ -56,6 +56,7 @@
     const PrinterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>;
     const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
     const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>;
+    const SearchIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
 
     // --- CURRICULUM DATA (Show & Tell Scope & Sequence) ---
     const curriculumData = {
@@ -157,6 +158,8 @@
       const [activeTab, setActiveTab] = useState('planner');
       const [selectedLevel, setSelectedLevel] = useState('level1');
       const [selectedUnit, setSelectedUnit] = useState(1);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [printMode, setPrintMode] = useState('bw');
       
       const [books, setBooks] = useState(() => {
         const saved = localStorage.getItem('abc_hello_books');
@@ -205,6 +208,25 @@
         return planBooks.slice(0, 4);
       }, [selectedLevel, selectedUnit, books]);
 
+      // Book Library Filter Logic
+      const filteredBooks = useMemo(() => {
+        if (!searchQuery) return books;
+        const lowerQ = searchQuery.toLowerCase();
+        return books.filter(book => {
+          // Create a searchable string for the unit mapping (e.g., "level 1 l1 - unit 3")
+          const mappedUnitStr = book.targetLevel === 'general' 
+            ? 'general use' 
+            : `level ${book.targetLevel.replace('level', '')} l${book.targetLevel.replace('level', '')} - unit ${book.targetUnit}`;
+            
+          return book.title.toLowerCase().includes(lowerQ) ||
+                 book.author.toLowerCase().includes(lowerQ) ||
+                 book.description.toLowerCase().includes(lowerQ) ||
+                 book.goal.toLowerCase().includes(lowerQ) ||
+                 mappedUnitStr.includes(lowerQ) ||
+                 book.tags.some(tag => tag.toLowerCase().includes(lowerQ));
+        });
+      }, [books, searchQuery]);
+
       const currentUnitData = curriculumData[selectedLevel].units.find(u => u.id === Number(selectedUnit));
 
       // UI Components
@@ -221,6 +243,8 @@
         const name = prompt("Enter student name:");
         if (name) setRoster([...roster, { id: generateId(), name, present: true }]);
       };
+
+      const bwMode = printMode === 'bw';
 
       return (
         <div className="min-h-screen p-4 sm:p-8 print:p-0 print:min-h-0 print:h-auto overflow-visible print:bg-white">
@@ -241,7 +265,23 @@
               </div>
               <p className="text-gray-500 font-bold ml-1 mt-1">Hello Meeting Smart Planner (9:00 - 9:30 AM)</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-4">
+              {activeTab === 'planner' && (
+                <div className="flex items-center bg-gray-200 rounded-lg p-1">
+                  <button
+                    onClick={() => setPrintMode('bw')}
+                    className={`px-3 py-1.5 text-sm font-bold rounded-md transition-colors ${printMode === 'bw' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    B&W
+                  </button>
+                  <button
+                    onClick={() => setPrintMode('color')}
+                    className={`px-3 py-1.5 text-sm font-bold rounded-md transition-colors ${printMode === 'color' ? 'bg-white shadow-sm text-[#1E88E5]' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Color
+                  </button>
+                </div>
+              )}
                <button 
                  onClick={() => {
                    setActiveTab('planner');
@@ -302,24 +342,24 @@
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 print:p-0 print:shadow-none print:border-none print:bg-white">
                 
                 {/* Header Information */}
-                <div className="border-b-4 print:border-b-2 print:border-black border-gray-100 pb-6 print:pb-2 mb-6 print:mb-2">
-                  <h2 className="text-3xl print:text-2xl font-black text-gray-800 print:text-black">
-                    {curriculumData[selectedLevel].title} - Unit {selectedUnit}: <span className="text-[#1E88E5] print:text-black">{currentUnitData.title}</span>
+                <div className={`border-b-4 print:border-b-2 border-gray-100 pb-6 print:pb-2 mb-6 print:mb-2 ${bwMode ? 'print:border-black' : 'print:border-gray-200'}`}>
+                  <h2 className={`text-3xl print:text-2xl font-black text-gray-800 ${bwMode ? 'print:text-black' : ''}`}>
+                    {curriculumData[selectedLevel].title} - Unit {selectedUnit}: <span className={`text-[#1E88E5] ${bwMode ? 'print:text-black' : ''}`}>{currentUnitData.title}</span>
                   </h2>
-                  <div className="mt-4 print:mt-2 grid grid-cols-1 md:grid-cols-2 gap-6 print:gap-2 bg-gray-50 print:bg-white p-4 print:p-2 rounded-xl print:border-2 print:border-black print:rounded-lg">
+                  <div className={`mt-4 print:mt-2 grid grid-cols-1 md:grid-cols-2 gap-6 print:gap-2 bg-gray-50 p-4 print:p-2 rounded-xl print:rounded-lg ${bwMode ? 'print:bg-white print:border-2 print:border-black' : 'print:bg-gray-50 print:border-none'}`}>
                     <div>
-                      <h4 className="text-xs print:text-[10px] font-bold text-gray-500 print:text-black uppercase tracking-wider mb-1 print:mb-0">Target Vocabulary</h4>
-                      <p className="text-gray-800 print:text-black font-semibold print:text-sm">{currentUnitData.vocab}</p>
+                      <h4 className={`text-xs print:text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 print:mb-0 ${bwMode ? 'print:text-black' : ''}`}>Target Vocabulary</h4>
+                      <p className={`text-gray-800 font-semibold print:text-sm ${bwMode ? 'print:text-black' : ''}`}>{currentUnitData.vocab}</p>
                     </div>
                     <div>
-                      <h4 className="text-xs print:text-[10px] font-bold text-gray-500 print:text-black uppercase tracking-wider mb-1 print:mb-0">Target Structures</h4>
-                      <p className="text-gray-800 print:text-black font-semibold print:text-sm">{currentUnitData.structure}</p>
+                      <h4 className={`text-xs print:text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 print:mb-0 ${bwMode ? 'print:text-black' : ''}`}>Target Structures</h4>
+                      <p className={`text-gray-800 font-semibold print:text-sm ${bwMode ? 'print:text-black' : ''}`}>{currentUnitData.structure}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* The 4-Week Grid */}
-                <h3 className="text-xl print:text-lg font-black text-gray-800 mb-4 print:mb-1 print:text-black">Books of the Week</h3>
+                <h3 className={`text-xl print:text-lg font-black text-gray-800 mb-4 print:mb-1 ${bwMode ? 'print:text-black' : ''}`}>Books of the Week</h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 print:grid-cols-2 gap-6 print:gap-2 mb-8 print:mb-2">
                   {generatedPlan.map((book, idx) => {
                     const weekColors = [
@@ -331,28 +371,28 @@
                     const color = weekColors[idx % 4];
 
                     return (
-                    <div key={idx} className="flex flex-col border-2 border-gray-100 print:border-black rounded-2xl print:rounded-lg overflow-hidden print-break-inside-avoid shadow-sm">
-                      <div className={`${color.header} ${color.text} print:bg-transparent print:border-b-2 print:border-black print:text-black px-4 py-2 print:px-2 print:py-1 font-black flex justify-between`}>
+                    <div key={idx} className={`flex flex-col border-2 border-gray-100 rounded-2xl print:rounded-lg overflow-hidden print-break-inside-avoid shadow-sm ${bwMode ? 'print:border-black' : 'print:border-gray-200'}`}>
+                      <div className={`${color.header} ${color.text} px-4 py-2 print:px-2 print:py-1 font-black flex justify-between ${bwMode ? 'print:bg-transparent print:border-b-2 print:border-black print:text-black' : ''}`}>
                         <span>Week {idx + 1}</span>
-                        <span className="opacity-90 print:opacity-100 print:text-black text-sm print:text-xs">
+                        <span className={`opacity-90 print:opacity-100 text-sm print:text-xs ${bwMode ? 'print:text-black' : ''}`}>
                           {book.targetLevel !== selectedLevel || book.targetUnit !== Number(selectedUnit) ? '(Supplement Book)' : '(Unit Target Book)'}
                         </span>
                       </div>
                       <div className="p-5 print:p-2 flex-1 bg-white flex flex-col gap-3 print:gap-1">
                         <div>
-                          <h4 className="font-black text-xl print:text-base text-gray-900 print:text-black leading-tight">{book.title}</h4>
-                          <p className="text-sm print:text-xs text-gray-500 print:text-black font-bold">by {book.author}</p>
+                          <h4 className={`font-black text-xl print:text-base text-gray-900 leading-tight ${bwMode ? 'print:text-black' : ''}`}>{book.title}</h4>
+                          <p className={`text-sm print:text-xs text-gray-500 font-bold ${bwMode ? 'print:text-black' : ''}`}>by {book.author}</p>
                         </div>
                         <div className="flex gap-2 print:gap-1 flex-wrap">
                           {book.tags.map(tag => (
-                            <span key={tag} className="text-[10px] print:text-[9px] bg-gray-100 print:bg-transparent text-gray-600 print:text-black print:border print:border-black font-bold px-2 py-1 print:px-1 print:py-0 rounded-md uppercase">
+                            <span key={tag} className={`text-[10px] print:text-[9px] bg-gray-100 text-gray-600 font-bold px-2 py-1 print:px-1 print:py-0 rounded-md uppercase ${bwMode ? 'print:bg-transparent print:text-black print:border print:border-black' : ''}`}>
                               {tag}
                             </span>
                           ))}
                         </div>
-                        <div className="mt-auto pt-3 print:pt-1 border-t border-gray-100 print:border-gray-400">
-                          <p className="text-xs print:text-[10px] font-bold text-gray-400 print:text-black uppercase tracking-wider mb-1 print:mb-0">Teaching Focus</p>
-                          <p className="text-sm print:text-[11px] text-gray-800 print:text-black font-medium leading-tight">{book.goal}</p>
+                        <div className={`mt-auto pt-3 print:pt-1 border-t border-gray-100 ${bwMode ? 'print:border-gray-400' : 'print:border-gray-200'}`}>
+                          <p className={`text-xs print:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 print:mb-0 ${bwMode ? 'print:text-black' : ''}`}>Teaching Focus</p>
+                          <p className={`text-sm print:text-[11px] text-gray-800 font-medium leading-tight ${bwMode ? 'print:text-black' : ''}`}>{book.goal}</p>
                         </div>
                       </div>
                     </div>
@@ -360,41 +400,41 @@
                 </div>
 
                 {/* Daily 30 Min Breakdown Template */}
-                <h3 className="text-xl print:text-lg font-black text-gray-800 mb-4 print:mb-1 print:text-black print-break-inside-avoid mt-8 print:mt-2">Daily Hello Meeting Routine (30 mins)</h3>
-                <div className="bg-gray-50 print:bg-transparent rounded-2xl print:rounded-lg border border-gray-200 print:border-2 print:border-black overflow-hidden print-break-inside-avoid">
+                <h3 className={`text-xl print:text-lg font-black text-gray-800 mb-4 print:mb-1 print-break-inside-avoid mt-8 print:mt-2 ${bwMode ? 'print:text-black' : ''}`}>Daily Hello Meeting Routine (30 mins)</h3>
+                <div className={`bg-gray-50 rounded-2xl print:rounded-lg border border-gray-200 overflow-hidden print-break-inside-avoid ${bwMode ? 'print:bg-transparent print:border-2 print:border-black' : 'print:bg-white'}`}>
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-gray-200 print:bg-transparent text-gray-700 print:text-black border-b print:border-b-2 print:border-black">
-                        <th className="p-3 print:p-1.5 font-black text-sm print:text-xs w-24 print:w-24 border-r border-gray-300 print:border-black">Time</th>
-                        <th className="p-3 print:p-1.5 font-black text-sm print:text-xs w-32 print:w-32 border-r border-gray-300 print:border-black">Section</th>
+                      <tr className={`bg-gray-200 text-gray-700 border-b ${bwMode ? 'print:bg-transparent print:text-black print:border-b-2 print:border-black' : 'print:bg-gray-200 print:border-gray-300'}`}>
+                        <th className={`p-3 print:p-1.5 font-black text-sm print:text-xs w-24 print:w-24 border-r border-gray-300 ${bwMode ? 'print:border-black' : ''}`}>Time</th>
+                        <th className={`p-3 print:p-1.5 font-black text-sm print:text-xs w-32 print:w-32 border-r border-gray-300 ${bwMode ? 'print:border-black' : ''}`}>Section</th>
                         <th className="p-3 print:p-1.5 font-black text-sm print:text-xs">Activity & Goal</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="border-b border-gray-200 print:border-black">
-                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:00 - 9:05</td>
-                        <td className="p-3 print:p-1 font-bold text-gray-800 print:text-black border-r border-gray-200 print:border-black bg-white print:bg-transparent text-sm print:text-xs">Welcome</td>
-                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-700 print:text-black bg-white print:bg-transparent leading-tight"><span className="font-bold text-[#1E88E5] print:text-black">Attendance & Greetings.</span> Ask "How are you?" or Unit-specific opening questions.</td>
+                      <tr className={`border-b border-gray-200 ${bwMode ? 'print:border-black' : ''}`}>
+                        <td className={`p-3 print:p-1 font-bold text-gray-600 border-r border-gray-200 text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black' : ''}`}>9:00 - 9:05</td>
+                        <td className={`p-3 print:p-1 font-bold text-gray-800 border-r border-gray-200 bg-white text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black print:bg-transparent' : ''}`}>Welcome</td>
+                        <td className={`p-3 print:p-1 text-sm print:text-xs text-gray-700 bg-white leading-tight ${bwMode ? 'print:text-black print:bg-transparent' : ''}`}><span className={`font-bold text-[#1E88E5] ${bwMode ? 'print:text-black' : ''}`}>Attendance & Greetings.</span> Ask "How are you?" or Unit-specific opening questions.</td>
                       </tr>
-                      <tr className="border-b border-gray-200 print:border-black">
-                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:05 - 9:10</td>
-                        <td className="p-3 print:p-1 font-bold text-gray-800 print:text-black border-r border-gray-200 print:border-black bg-white print:bg-transparent text-sm print:text-xs">Warm-up</td>
-                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-700 print:text-black bg-white print:bg-transparent leading-tight"><span className="font-bold text-[#1E88E5] print:text-black">Song / Movement.</span> Sing the Show & Tell unit song or practice action verbs.</td>
+                      <tr className={`border-b border-gray-200 ${bwMode ? 'print:border-black' : ''}`}>
+                        <td className={`p-3 print:p-1 font-bold text-gray-600 border-r border-gray-200 text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black' : ''}`}>9:05 - 9:10</td>
+                        <td className={`p-3 print:p-1 font-bold text-gray-800 border-r border-gray-200 bg-white text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black print:bg-transparent' : ''}`}>Warm-up</td>
+                        <td className={`p-3 print:p-1 text-sm print:text-xs text-gray-700 bg-white leading-tight ${bwMode ? 'print:text-black print:bg-transparent' : ''}`}><span className={`font-bold text-[#1E88E5] ${bwMode ? 'print:text-black' : ''}`}>Song / Movement.</span> Sing the Show & Tell unit song or practice action verbs.</td>
                       </tr>
-                      <tr className="border-b border-gray-200 print:border-black">
-                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:10 - 9:20</td>
-                        <td className="p-3 print:p-1 font-black text-[#E53935] print:text-black border-r border-gray-200 print:border-black bg-[#fff5f5] print:bg-transparent text-sm print:text-xs">Story Time</td>
-                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-800 print:text-black bg-[#fff5f5] print:bg-transparent leading-tight"><span className="font-bold">Read the Book of the Week.</span> Emphasize the weekly <em>Teaching Focus</em>. Ask questions relating the story to the unit's Big Question.</td>
+                      <tr className={`border-b border-gray-200 ${bwMode ? 'print:border-black' : ''}`}>
+                        <td className={`p-3 print:p-1 font-bold text-gray-600 border-r border-gray-200 text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black' : ''}`}>9:10 - 9:20</td>
+                        <td className={`p-3 print:p-1 font-black text-[#E53935] border-r border-gray-200 bg-[#fff5f5] text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black print:bg-transparent' : ''}`}>Story Time</td>
+                        <td className={`p-3 print:p-1 text-sm print:text-xs text-gray-800 bg-[#fff5f5] leading-tight ${bwMode ? 'print:text-black print:bg-transparent' : ''}`}><span className="font-bold">Read the Book of the Week.</span> Emphasize the weekly <em>Teaching Focus</em>. Ask questions relating the story to the unit's Big Question.</td>
                       </tr>
-                      <tr className="border-b border-gray-200 print:border-black">
-                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:20 - 9:25</td>
-                        <td className="p-3 print:p-1 font-bold text-gray-800 print:text-black border-r border-gray-200 print:border-black bg-white print:bg-transparent text-sm print:text-xs">Concept Review</td>
-                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-700 print:text-black bg-white print:bg-transparent leading-tight"><span className="font-bold text-[#1E88E5] print:text-black">Target Vocabulary Practice.</span> Flashcards, simple games, or discussing the book's themes.</td>
+                      <tr className={`border-b border-gray-200 ${bwMode ? 'print:border-black' : ''}`}>
+                        <td className={`p-3 print:p-1 font-bold text-gray-600 border-r border-gray-200 text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black' : ''}`}>9:20 - 9:25</td>
+                        <td className={`p-3 print:p-1 font-bold text-gray-800 border-r border-gray-200 bg-white text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black print:bg-transparent' : ''}`}>Concept Review</td>
+                        <td className={`p-3 print:p-1 text-sm print:text-xs text-gray-700 bg-white leading-tight ${bwMode ? 'print:text-black print:bg-transparent' : ''}`}><span className={`font-bold text-[#1E88E5] ${bwMode ? 'print:text-black' : ''}`}>Target Vocabulary Practice.</span> Flashcards, simple games, or discussing the book's themes.</td>
                       </tr>
                       <tr>
-                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:25 - 9:30</td>
-                        <td className="p-3 print:p-1 font-bold text-gray-800 print:text-black border-r border-gray-200 print:border-black bg-white print:bg-transparent text-sm print:text-xs">Transition</td>
-                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-700 print:text-black bg-white print:bg-transparent leading-tight"><span className="font-bold text-[#1E88E5] print:text-black">Wrap up & Restroom.</span> Prepare students for the transition to Outdoor Time.</td>
+                        <td className={`p-3 print:p-1 font-bold text-gray-600 border-r border-gray-200 text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black' : ''}`}>9:25 - 9:30</td>
+                        <td className={`p-3 print:p-1 font-bold text-gray-800 border-r border-gray-200 bg-white text-sm print:text-xs ${bwMode ? 'print:text-black print:border-black print:bg-transparent' : ''}`}>Transition</td>
+                        <td className={`p-3 print:p-1 text-sm print:text-xs text-gray-700 bg-white leading-tight ${bwMode ? 'print:text-black print:bg-transparent' : ''}`}><span className={`font-bold text-[#1E88E5] ${bwMode ? 'print:text-black' : ''}`}>Wrap up & Restroom.</span> Prepare students for the transition to Outdoor Time.</td>
                       </tr>
                     </tbody>
                   </table>
@@ -407,16 +447,30 @@
           {/* --- TAB: BOOK LIBRARY --- */}
           {activeTab === 'books' && (
             <div className="max-w-6xl mx-auto space-y-6 no-print">
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                  <h2 className="text-2xl font-black text-gray-800">Book Database ({books.length})</h2>
-                  <p className="text-sm font-bold text-[#1E88E5] bg-blue-50 px-3 py-1 rounded-full">All transcribed books mapped to units</p>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 border-b border-gray-200 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-black text-gray-800">Book Database ({filteredBooks.length})</h2>
+                    <span className="text-xs font-bold text-[#1E88E5] bg-blue-50 px-2 py-1 rounded border border-blue-100 hidden md:inline-block">Mapped to Curriculum</span>
+                  </div>
+                  <div className="relative w-full sm:w-72">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <SearchIcon className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <input 
+                      type="text" 
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      placeholder="Search books, tags, or goals..." 
+                      className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E88E5] bg-white text-gray-900 transition-shadow"
+                    />
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto p-6 pt-0">
+                  <table className="w-full text-left border-collapse mt-4">
                     <thead>
-                      <tr className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
+                      <tr className="bg-white text-gray-500 uppercase text-xs tracking-wider border-b border-gray-200">
                         <th className="p-4 font-bold border-b border-gray-200">Title & Author</th>
                         <th className="p-4 font-bold border-b border-gray-200">Mapped Unit</th>
                         <th className="p-4 font-bold border-b border-gray-200">Tags</th>
@@ -424,32 +478,40 @@
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {books.map(book => (
-                        <tr key={book.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="p-4 align-top">
-                            <div className="font-black text-gray-800 text-sm">{book.title}</div>
-                            <div className="text-xs text-gray-500 font-semibold">{book.author}</div>
-                          </td>
-                          <td className="p-4 align-top whitespace-nowrap">
-                            {book.targetLevel === 'general' ? (
-                              <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-100">General Use</span>
-                            ) : (
-                              <span className="text-xs font-bold text-[#1E88E5] bg-blue-50 px-2 py-1 rounded border border-blue-100">
-                                {book.targetLevel.replace('level', 'L')} - Unit {book.targetUnit}
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-4 align-top max-w-[150px]">
-                            <div className="flex flex-wrap gap-1">
-                              {book.tags.map(tag => <span key={tag} className="text-[9px] bg-gray-100 text-gray-600 font-bold px-1.5 py-0.5 rounded uppercase">{tag}</span>)}
-                            </div>
-                          </td>
-                          <td className="p-4 align-top text-xs text-gray-600 font-medium max-w-xs">
-                            <span className="block mb-1 text-gray-400 font-bold">Desc: <span className="font-normal text-gray-600">{book.description}</span></span>
-                            <span className="block text-[#E53935] font-bold">Goal: <span className="font-normal text-gray-800">{book.goal}</span></span>
+                      {filteredBooks.length > 0 ? (
+                        filteredBooks.map(book => (
+                          <tr key={book.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="p-4 align-top">
+                              <div className="font-black text-gray-800 text-sm">{book.title}</div>
+                              <div className="text-xs text-gray-500 font-semibold">{book.author}</div>
+                            </td>
+                            <td className="p-4 align-top whitespace-nowrap">
+                              {book.targetLevel === 'general' ? (
+                                <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-100">General Use</span>
+                              ) : (
+                                <span className="text-xs font-bold text-[#1E88E5] bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                                  {book.targetLevel.replace('level', 'L')} - Unit {book.targetUnit}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4 align-top max-w-[150px]">
+                              <div className="flex flex-wrap gap-1">
+                                {book.tags.map(tag => <span key={tag} className="text-[9px] bg-gray-100 text-gray-600 font-bold px-1.5 py-0.5 rounded uppercase">{tag}</span>)}
+                              </div>
+                            </td>
+                            <td className="p-4 align-top text-xs text-gray-600 font-medium max-w-xs">
+                              <span className="block mb-1 text-gray-400 font-bold">Desc: <span className="font-normal text-gray-600">{book.description}</span></span>
+                              <span className="block text-[#E53935] font-bold">Goal: <span className="font-normal text-gray-800">{book.goal}</span></span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4" className="p-12 text-center text-gray-500 font-bold bg-white">
+                            No books found matching "{searchQuery}"
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
