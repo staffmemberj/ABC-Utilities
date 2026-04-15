@@ -12,19 +12,27 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+    
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #FAF8F5; /* ABC Garden warm off-white */
+      color: #1f2937;
+    }
+
     @media print {
       @page { 
         size: portrait A4; 
         margin: 8mm 10mm 12mm 10mm;
         @bottom-center {
           content: counter(page) "/" counter(pages);
-          font-family: sans-serif;
+          font-family: 'Nunito', sans-serif;
           font-size: 10pt;
           font-weight: bold;
           color: black;
         }
       }
-      body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none !important; }
       
       /* Specific directional print borders to avoid overlapping/inconsistent thickness */
@@ -74,7 +82,7 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body>
   <div id="root"></div>
 
   <script type="text/babel">
@@ -741,43 +749,67 @@
       
       const printableDays = weekDays.filter(day => !holidays[day]); // Just filters manual holidays
 
+      const TabButton = ({ id, icon: Icon, label }) => (
+        <button
+          onClick={() => setActiveTab(id)}
+          className={`flex items-center gap-2 px-5 py-3 font-bold rounded-t-xl transition-all border-b-4 ${activeTab === id ? 'bg-white text-[#1E88E5] border-[#1E88E5] shadow-sm' : 'bg-[#f0ece1] text-gray-500 border-transparent hover:bg-[#e6e1d6]'}`}
+        >
+          <Icon className="w-5 h-5" /> {label}
+        </button>
+      );
+
       return (
-        <div className="min-h-screen print:min-h-0 p-4 sm:p-8 print:p-0 relative">
+        <div className="min-h-screen bg-[#FAF8F5] p-4 sm:p-8 font-sans print:bg-white print:p-0 relative">
           
-          <div className="max-w-7xl mx-auto mb-6 flex space-x-2 bg-gray-200 p-1.5 rounded-xl w-fit no-print">
-            <button onClick={() => setActiveTab('planner')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'planner' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
-              <CalendarIcon className="w-5 h-5" /> Weekly Planner
-            </button>
-            <button onClick={() => setActiveTab('attendance')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'attendance' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
-              <ClipboardListIcon className="w-5 h-5" /> Student Attendance
-            </button>
-            <button onClick={() => setActiveTab('repository')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'repository' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
-              <DatabaseIcon className="w-5 h-5" /> Activity Repository
-            </button>
+          {/* Header */}
+          <div className="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4 no-print">
+            <div>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="abc-horizontal-block-tilted-mono.png" 
+                  alt="ABC Garden Logo" 
+                  className="h-12 w-auto object-contain"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+                <h1 className="text-3xl font-black hidden text-gray-800">ABC Garden</h1>
+              </div>
+              <p className="text-gray-500 font-bold ml-1 mt-1">Smart Lesson Planner</p>
+            </div>
+            <div className="flex gap-2">
+            </div>
+          </div>
+
+          <div className="max-w-7xl mx-auto flex gap-2 border-b-4 border-gray-200 mb-6 no-print overflow-x-auto">
+            <TabButton id="planner" icon={CalendarIcon} label="Weekly Planner" />
+            <TabButton id="attendance" icon={ClipboardListIcon} label="Student Attendance" />
+            <TabButton id="repository" icon={DatabaseIcon} label="Activity Repository" />
           </div>
 
           {activeTab === 'attendance' && (
             <div className="max-w-7xl mx-auto space-y-6">
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg no-print">
-                <p className="text-blue-800 text-sm">
+              <div className="bg-[#f8fafc] border-l-4 border-blue-400 p-4 rounded-r-lg no-print">
+                <p className="text-gray-800 text-sm">
                   <strong>Master Attendance Roster:</strong> The students and schedules you enter here will automatically update the "Daily Settings" student counts on your Weekly Planner. 
                   When you print your lesson plan, each day's specific roster will automatically print on the back!
                 </p>
               </div>
-              <div className="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden print:shadow-none print:border-none">
-                 <div className="p-4 sm:p-6 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
+              <div className="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden print:shadow-none print:border-none">
+                 <div className="p-4 sm:p-6 border-b border-gray-200 bg-[#f8fafc] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
                    <h2 className="text-xl font-bold text-gray-800">Student Roster & Weekly Schedule</h2>
                    <div className="flex flex-wrap items-center gap-2">
-                      <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md text-sm font-bold hover:bg-indigo-100 transition-colors cursor-pointer shadow-sm">
+                      <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-md text-sm font-bold hover:bg-blue-50 transition-colors cursor-pointer shadow-sm">
                         <DownloadIcon className="w-4 h-4" />
                         Import
                         <input type="file" accept=".json" onChange={handleImportRoster} className="hidden" />
                       </label>
-                      <button onClick={handleExportRoster} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md text-sm font-bold hover:bg-indigo-100 transition-colors shadow-sm">
+                      <button onClick={handleExportRoster} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-md text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm">
                         <UploadIcon className="w-4 h-4" />
                         Export
                       </button>
-                      <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700 shadow-sm transition-colors ml-2">
+                      <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-[#1E88E5] text-white rounded-md text-sm font-bold hover:bg-blue-600 shadow-sm transition-colors ml-2">
                         <PrinterIcon className="w-4 h-4"/> Print Roster
                       </button>
                    </div>
@@ -791,7 +823,7 @@
                  <div className="overflow-x-auto">
                    <table className="w-full text-left border-collapse">
                      <thead>
-                       <tr className="bg-gray-100 print:bg-white">
+                       <tr className="bg-gray-50 print:bg-white">
                          <th className="p-4 print:p-2 border-b border-gray-200 print:border-black text-sm print:text-xs font-bold text-gray-700 print-text-black w-48">Student Name</th>
                          {weekDays.map(day => <th key={day} className="p-4 print:p-2 border-b border-gray-200 print:border-black text-sm print:text-xs font-bold text-gray-700 print-text-black text-center min-w-[120px] print:min-w-[60px]">{day}</th>)}
                          <th className="p-4 border-b border-gray-200 text-sm font-bold text-gray-700 w-16 text-center no-print">Actions</th>
@@ -799,13 +831,13 @@
                      </thead>
                      <tbody>
                        {roster.map(student => (
-                          <tr key={student.id} className="border-b border-gray-100 print:border-black hover:bg-gray-50 transition-colors">
+                          <tr key={student.id} className="border-b border-gray-100 print:border-black hover:bg-[#f8fafc] transition-colors">
                              <td className="p-2 print:p-2 print:border-r print:border-black">
-                               <input type="text" value={student.name} onChange={e => updateStudentName(student.id, e.target.value)} placeholder="Student Name" className="w-full p-2.5 print:p-1 border border-gray-300 print:border-none rounded outline-none focus:ring-2 focus:ring-blue-500 font-medium print-text-black" />
+                               <input type="text" value={student.name} onChange={e => updateStudentName(student.id, e.target.value)} placeholder="Student Name" className="w-full p-2.5 print:p-1 border border-gray-300 print:border-none rounded outline-none focus:ring-2 focus:ring-[#1E88E5] font-medium print-text-black" />
                              </td>
                              {weekDays.map(day => (
                                <td key={day} className="p-2 print:p-2 text-center print:border-r print:border-black">
-                                 <select value={student.schedule[day]} onChange={e => updateStudentSchedule(student.id, day, e.target.value)} className={`w-full p-2.5 print:p-1 border print:border-none rounded text-sm outline-none focus:ring-2 focus:ring-blue-500 font-bold transition-colors print-text-black ${student.schedule[day] === 'None' ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-blue-300 text-blue-700 shadow-sm'}`}>
+                                 <select value={student.schedule[day]} onChange={e => updateStudentSchedule(student.id, day, e.target.value)} className={`w-full p-2.5 print:p-1 border print:border-none rounded text-sm outline-none focus:ring-2 focus:ring-[#1E88E5] font-bold transition-colors print-text-black ${student.schedule[day] === 'None' ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-blue-300 text-[#1E88E5] shadow-sm'}`}>
                                    <option value="None">- Off -</option>
                                    <option value="fun">Fun English</option>
                                    <option value="step">Step English</option>
@@ -825,7 +857,7 @@
                    {roster.length === 0 && <div className="p-12 text-center text-gray-500 font-medium">No students added to the roster yet.</div>}
                  </div>
                  <div className="p-4 border-t border-gray-200 bg-white no-print">
-                   <button onClick={addStudentToRoster} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium px-2 py-1 rounded-md hover:bg-blue-50 transition-colors">
+                   <button onClick={addStudentToRoster} className="flex items-center gap-2 text-sm text-[#1E88E5] hover:text-blue-700 font-medium px-2 py-1 rounded-md hover:bg-blue-50 transition-colors">
                      <UserPlusIcon className="w-4 h-4" />
                      生徒を追加 (Add Student Row)
                    </button>
@@ -842,25 +874,25 @@
               <div className="block print:hidden space-y-6 max-w-7xl mx-auto">
                 
                 {/* Header & Calendar Setup */}
-                <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
+                <div className="bg-white shadow-sm border border-gray-200 rounded-2xl overflow-hidden">
                   
                   {/* Program Toggle */}
-                  <div className="p-4 border-b-2 border-gray-300 bg-gray-100 flex justify-center">
-                    <div className="flex bg-white p-1.5 rounded-xl shadow-sm border border-gray-300 w-full max-w-lg">
-                      <button onClick={() => setActiveProgram('both')} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${activeProgram === 'both' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>Both</button>
-                      <button onClick={() => setActiveProgram('fun')} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${activeProgram === 'fun' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>Fun English</button>
-                      <button onClick={() => setActiveProgram('step')} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${activeProgram === 'step' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>Step English</button>
+                  <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-center">
+                    <div className="flex bg-[#f0ece1] p-1.5 rounded-xl shadow-inner w-full max-w-lg">
+                      <button onClick={() => setActiveProgram('both')} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${activeProgram === 'both' ? 'bg-white text-[#1E88E5] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>Both</button>
+                      <button onClick={() => setActiveProgram('fun')} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${activeProgram === 'fun' ? 'bg-white text-[#1E88E5] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>Fun English</button>
+                      <button onClick={() => setActiveProgram('step')} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${activeProgram === 'step' ? 'bg-white text-[#1E88E5] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>Step English</button>
                     </div>
                   </div>
 
                   {/* Calendar Setup & Quick Gen */}
-                  <div className="bg-blue-50 p-4 sm:p-6 border-b-2 border-blue-200 shadow-inner flex flex-col lg:flex-row items-end lg:items-center gap-6 justify-between">
+                  <div className="bg-[#f8fafc] p-4 sm:p-6 border-b border-gray-200 flex flex-col lg:flex-row items-end lg:items-center gap-6 justify-between">
                     
                     <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center gap-2 text-blue-800 font-bold whitespace-nowrap mr-2">
+                      <div className="flex items-center gap-2 text-[#1E88E5] font-bold whitespace-nowrap mr-2">
                         <CalendarIcon className="w-5 h-5" /> Schedule:
                       </div>
-                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-blue-200 shadow-sm">
+                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
                         <select value={calYear} onChange={e => setCalYear(Number(e.target.value))} className="font-bold text-gray-800 outline-none bg-transparent">
                           <option value={currentYear}>{currentYear}</option>
                           <option value={currentYear + 1}>{currentYear + 1}</option>
@@ -877,10 +909,10 @@
                     </div>
 
                     <div className="flex items-center gap-3 flex-wrap w-full lg:w-auto">
-                      <div className="flex items-center gap-2 text-blue-800 font-bold whitespace-nowrap">
-                        <ZapIcon className="w-5 h-5 fill-blue-600 text-blue-600"/> Lesson Gen:
+                      <div className="flex items-center gap-2 text-[#1E88E5] font-bold whitespace-nowrap">
+                        <ZapIcon className="w-5 h-5 text-[#1E88E5]"/> Lesson Gen:
                       </div>
-                      <div className="flex items-center gap-2 flex-1 lg:flex-none bg-white px-3 py-2 rounded-lg border border-blue-200 shadow-sm">
+                      <div className="flex items-center gap-2 flex-1 lg:flex-none bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
                         <BookIcon className="w-5 h-5 text-gray-400" />
                         <select value={selectedBook} onChange={handleBookChange} className="font-bold text-gray-800 outline-none bg-transparent text-sm max-w-[140px]">
                           {Object.entries(curriculumSets).map(([key, data]) => (
@@ -893,10 +925,10 @@
                           ))}
                         </select>
                       </div>
-                      <button onClick={generateSet} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm font-bold whitespace-nowrap">
+                      <button onClick={generateSet} className="px-4 py-2 bg-[#1E88E5] text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm text-sm font-bold whitespace-nowrap">
                         Fill Targets
                       </button>
-                      <button onClick={() => randomizeWeek()} className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm text-sm font-bold" title="Shuffle week without changing targets">
+                      <button onClick={() => randomizeWeek()} className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors shadow-sm text-sm font-bold" title="Shuffle week without changing targets">
                         <ShuffleIcon className="w-4 h-4" /> Randomize
                       </button>
                     </div>
@@ -904,9 +936,9 @@
                   </div>
 
                   {/* Daily Schedule & Students Bar */}
-                  <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 px-6 py-5 border-b-2 border-gray-300 bg-white">
-                     <div className="text-sm font-bold text-blue-800 flex items-center gap-2 whitespace-nowrap mr-2">
-                       <CalendarIcon className="w-5 h-5" /> Settings:
+                  <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 px-6 py-5 border-b border-gray-200 bg-white">
+                     <div className="text-sm font-bold text-gray-800 flex items-center gap-2 whitespace-nowrap mr-2">
+                       <CalendarIcon className="w-5 h-5 text-gray-500" /> Settings:
                      </div>
                      <div className="flex gap-4 overflow-x-auto w-full pb-2 lg:pb-0 scrollbar-hide">
                        {weekDays.map(day => {
@@ -914,7 +946,7 @@
                          const dayOff = isDayOff(day, activeProgram);
                          
                          return (
-                           <div key={day} className={`flex flex-col gap-2 p-3 rounded-xl border w-48 shrink-0 transition-colors ${dayOff ? 'bg-gray-100 border-gray-200' : 'bg-blue-50 border-blue-200 shadow-sm'}`}>
+                           <div key={day} className={`flex flex-col gap-2 p-3 rounded-xl border w-48 shrink-0 transition-colors ${dayOff ? 'bg-gray-50 border-gray-200' : 'bg-[#f8fafc] border-blue-200 shadow-sm'}`}>
                              <div className="flex justify-between items-center">
                                <span className={`text-sm font-bold ${dayOff ? 'text-gray-400' : 'text-gray-800'}`}>
                                  {day} <span className="text-xs font-medium ml-1">({displayShortDate(currentWeekDates[day])})</span>
@@ -931,15 +963,15 @@
                                </label>
                              </div>
                              {!dayOff ? (
-                               <div className="flex items-center justify-between bg-white px-2 py-1.5 rounded-lg border border-blue-100">
+                               <div className="flex items-center justify-between bg-white px-2 py-1.5 rounded-lg border border-gray-200">
                                  <div className="flex items-center gap-1 text-gray-500">
                                    <UsersIcon className="w-3.5 h-3.5" />
                                    <span className="text-[10px] font-bold uppercase">Students</span>
                                  </div>
-                                 <span className="text-sm font-black text-blue-700 pr-1">{rawCount}</span>
+                                 <span className="text-sm font-black text-[#1E88E5] pr-1">{rawCount}</span>
                                </div>
                              ) : (
-                                <div className="flex items-center justify-center bg-gray-200/50 px-2 py-1.5 rounded-lg border border-gray-200 text-[11px] font-bold text-gray-400 h-[34px]">
+                                <div className="flex items-center justify-center bg-gray-100 px-2 py-1.5 rounded-lg border border-gray-200 text-[11px] font-bold text-gray-400 h-[34px]">
                                   No Class
                                 </div>
                              )}
@@ -967,8 +999,8 @@
                 </div>
 
                 {/* Daily Editor */}
-                <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
-                  <div className="flex border-b-2 border-gray-300 bg-gray-100">
+                <div className="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden">
+                  <div className="flex border-b border-gray-200 bg-gray-50">
                     {weekDays.map(day => {
                       const dayOff = isDayOff(day, activeProgram);
                       return (
@@ -977,10 +1009,10 @@
                           onClick={() => setActiveDay(day)}
                           className={`flex-1 py-4 flex flex-col items-center justify-center transition-colors border-b-4 ${
                             activeDay === day
-                              ? 'bg-white text-blue-700 border-blue-600'
+                              ? 'bg-white text-[#1E88E5] border-[#1E88E5]'
                               : dayOff 
-                                ? 'text-gray-400 hover:bg-gray-200 border-transparent'
-                                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200 border-transparent'
+                                ? 'text-gray-400 hover:bg-gray-100 border-transparent'
+                                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100 border-transparent'
                           }`}
                         >
                           <span className="font-black text-sm sm:text-base">{day}</span>
@@ -994,18 +1026,18 @@
 
                   <div className="bg-white min-h-[300px]">
                     <div className="p-4 sm:p-6 space-y-4">
-                      <div className="flex justify-between items-center border-b pb-2 mb-4">
+                      <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
                         <h2 className="font-black text-xl text-gray-800 flex items-center gap-2">
                           {activeDay} <span className="text-gray-400 text-lg font-medium">({displayShortDate(currentWeekDates[activeDay])})</span>
                         </h2>
                         <div className="flex gap-2">
-                          <button onClick={exportToExcel} className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"><DownloadIcon className="w-4 h-4"/> Export Excel</button>
-                          <button onClick={() => window.print()} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"><PrinterIcon className="w-4 h-4"/> Print Dual Weekly Plan</button>
+                          <button onClick={exportToExcel} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 text-sm transition-colors"><DownloadIcon className="w-4 h-4"/> Export Excel</button>
+                          <button onClick={() => window.print()} className="flex items-center gap-2 px-3 py-1.5 bg-[#1E88E5] text-white font-bold rounded-lg hover:bg-blue-600 text-sm transition-colors"><PrinterIcon className="w-4 h-4"/> Print Dual Weekly Plan</button>
                         </div>
                       </div>
 
                       {isDayOff(activeDay, activeProgram) ? (
-                        <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+                        <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
                           <PalmtreeIcon className="w-12 h-12 text-gray-300 mb-3" />
                           <h3 className="text-xl font-bold text-gray-500">No Class</h3>
                           <p className="text-gray-400 mt-2 font-medium">No lessons scheduled for {activeProgram === 'both' ? 'either program' : 'this program'} today.</p>
@@ -1024,7 +1056,7 @@
                           return (
                             <div key={prog} className="mb-10 last:mb-0">
                                {activeProgram === 'both' && (
-                                 <h3 className="font-black text-xl text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">{progConfig.name}</h3>
+                                 <h3 className="font-black text-xl text-gray-800 mb-4 border-b-2 border-gray-100 pb-2">{progConfig.name}</h3>
                                )}
                                
                                <div className="space-y-4">
@@ -1041,12 +1073,12 @@
                                    const selectedAct = repository.find(a => a.id === selectedActId);
 
                                    return (
-                                     <div key={block.id} className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start">
+                                     <div key={block.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start">
                                        <div className="w-full md:w-1/3">
                                          <h3 className="font-bold text-gray-800 text-lg">{block.label}</h3>
                                          <div className="flex flex-wrap gap-1 mt-2">
                                            {block.allowedTypes.map(type => (
-                                             <span key={type} className="text-[10px] uppercase font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{type}</span>
+                                             <span key={type} className="text-[10px] uppercase font-bold bg-[#f8fafc] text-[#1E88E5] border border-blue-100 px-2 py-0.5 rounded">{type}</span>
                                            ))}
                                          </div>
                                        </div>
@@ -1057,8 +1089,8 @@
                                            onChange={(e) => updatePlan(prog, activeDay, block.id, e.target.value)}
                                            disabled={isSingle}
                                            className={`w-full p-3 rounded-lg border text-sm font-bold outline-none shadow-sm transition-all
-                                             ${isMissing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-gray-300 focus:ring-2 focus:ring-blue-500'}
-                                             ${isSingle ? 'opacity-100 bg-gray-200 border-gray-400 text-gray-800 cursor-not-allowed' : 'text-gray-900'}
+                                             ${isMissing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-gray-200 focus:ring-2 focus:ring-[#1E88E5]'}
+                                             ${isSingle ? 'opacity-100 bg-gray-100 border-gray-300 text-gray-800 cursor-not-allowed' : 'text-gray-900'}
                                            `}
                                          >
                                            <option value="">-- Select Activity --</option>
@@ -1104,7 +1136,7 @@
                                          )}
 
                                          {isMissing && (
-                                           <button onClick={() => openQuickAddModal(prog, block.allowedTypes[0])} className="w-full flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                                           <button onClick={() => openQuickAddModal(prog, block.allowedTypes[0])} className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
                                              <PlusCircleIcon className="w-4 h-4" /> Quick Add Missing Activity
                                            </button>
                                          )}
@@ -1156,7 +1188,7 @@
                                   {printTargets.book && printTargets.unit && (
                                     <>
                                       <span className="text-gray-400 print:text-gray-500 font-bold print-text-black">|</span>
-                                      <p className="text-xl print:text-[11px] text-blue-800 print-text-black font-black">
+                                      <p className="text-xl print:text-[11px] text-gray-800 print-text-black font-black">
                                         {printTargets.book} : {printTargets.unit}
                                       </p>
                                     </>
@@ -1309,22 +1341,24 @@
           {/* REPOSITORY TAB */}
           {activeTab === 'repository' && (
             <div className="max-w-7xl mx-auto flex flex-col gap-6 no-print">
-              <div className="bg-white shadow-md rounded-xl border border-gray-200 p-6">
-                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><DatabaseIcon className="w-5 h-5 text-blue-600"/> Add Activity to Database</h2>
+              <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-6">
+                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <DatabaseIcon className="w-5 h-5 text-[#1E88E5]"/> Add Activity to Database
+                </h2>
                 <form onSubmit={handleAddActivity} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-start">
                   <div className="lg:col-span-2">
                     <label className="block text-xs font-bold text-gray-600 mb-1">Name</label>
-                    <input required type="text" value={newAct.name} onChange={e => setNewAct({...newAct, name: e.target.value})} className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                    <input required type="text" value={newAct.name} onChange={e => setNewAct({...newAct, name: e.target.value})} className="w-full p-2 border border-gray-200 rounded-md text-sm bg-gray-50 focus:ring-2 focus:ring-[#1E88E5] outline-none" />
                   </div>
                   <div className="lg:col-span-1">
                     <label className="block text-xs font-bold text-gray-600 mb-1">Category</label>
-                    <select value={newAct.category} onChange={e => setNewAct({...newAct, category: e.target.value})} className="w-full p-2 border rounded-md text-sm bg-gray-50">
+                    <select value={newAct.category} onChange={e => setNewAct({...newAct, category: e.target.value})} className="w-full p-2 border border-gray-200 rounded-md text-sm bg-gray-50 focus:ring-2 focus:ring-[#1E88E5] outline-none">
                       {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                   </div>
                   <div className="lg:col-span-1">
                     <label className="block text-[10px] font-bold text-gray-600 mb-1 leading-tight">Focus</label>
-                    <select value={newAct.focus} onChange={e => setNewAct({...newAct, focus: e.target.value})} className="w-full p-2 border rounded-md text-sm bg-gray-50">
+                    <select value={newAct.focus} onChange={e => setNewAct({...newAct, focus: e.target.value})} className="w-full p-2 border border-gray-200 rounded-md text-sm bg-gray-50 focus:ring-2 focus:ring-[#1E88E5] outline-none">
                       <option value="Both">Both</option>
                       <option value="Conversation">Conversation</option>
                       <option value="Literacy">Literacy</option>
@@ -1333,38 +1367,38 @@
                   <div className="lg:col-span-1 grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-[10px] font-bold text-gray-600 mb-1 leading-tight">Min. Students</label>
-                      <input type="number" min="1" max="12" value={newAct.min} onChange={e => setNewAct({...newAct, min: Number(e.target.value)})} className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                      <input type="number" min="1" max="12" value={newAct.min} onChange={e => setNewAct({...newAct, min: Number(e.target.value)})} className="w-full p-2 border border-gray-200 rounded-md text-sm bg-gray-50 focus:ring-2 focus:ring-[#1E88E5] outline-none" />
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-gray-600 mb-1 leading-tight">Max. Students</label>
-                      <input type="number" min="1" max="12" value={newAct.max} onChange={e => setNewAct({...newAct, max: Number(e.target.value)})} className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                      <input type="number" min="1" max="12" value={newAct.max} onChange={e => setNewAct({...newAct, max: Number(e.target.value)})} className="w-full p-2 border border-gray-200 rounded-md text-sm bg-gray-50 focus:ring-2 focus:ring-[#1E88E5] outline-none" />
                     </div>
                   </div>
                   <div className="lg:col-span-1">
                     <label className="block text-xs font-bold text-gray-600 mb-1">Unit Tag</label>
-                    <input type="text" value={newAct.unit} onChange={e => setNewAct({...newAct, unit: e.target.value})} placeholder="e.g. all, lb1-1" className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                    <input type="text" value={newAct.unit} onChange={e => setNewAct({...newAct, unit: e.target.value})} placeholder="e.g. all, lb1-1" className="w-full p-2 border border-gray-200 rounded-md text-sm bg-gray-50 focus:ring-2 focus:ring-[#1E88E5] outline-none" />
                   </div>
                   <div className="lg:col-span-6 border-t border-gray-100 pt-4"></div>
                   <div className="lg:col-span-2">
                     <label className="block text-xs font-bold text-gray-600 mb-1">Materials</label>
-                    <input type="text" value={newAct.materials} onChange={e => setNewAct({...newAct, materials: e.target.value})} placeholder="(Leave blank for None)" className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                    <input type="text" value={newAct.materials} onChange={e => setNewAct({...newAct, materials: e.target.value})} placeholder="(Leave blank for None)" className="w-full p-2 border border-gray-200 rounded-md text-sm bg-gray-50 focus:ring-2 focus:ring-[#1E88E5] outline-none" />
                   </div>
                   <div className="lg:col-span-4">
                     <label className="block text-xs font-bold text-gray-600 mb-1">Goal</label>
-                    <input type="text" value={newAct.goal} onChange={e => setNewAct({...newAct, goal: e.target.value})} className="w-full p-2 border rounded-md text-sm bg-gray-50" />
+                    <input type="text" value={newAct.goal} onChange={e => setNewAct({...newAct, goal: e.target.value})} className="w-full p-2 border border-gray-200 rounded-md text-sm bg-gray-50 focus:ring-2 focus:ring-[#1E88E5] outline-none" />
                   </div>
                   <div className="lg:col-span-6">
                     <label className="block text-xs font-bold text-gray-600 mb-1">Description / Mechanics</label>
-                    <textarea rows="2" value={newAct.description} onChange={e => setNewAct({...newAct, description: e.target.value})} className="w-full p-2 border rounded-md text-sm bg-gray-50 resize-y" placeholder="Brief instructions for the teacher..."></textarea>
+                    <textarea rows="2" value={newAct.description} onChange={e => setNewAct({...newAct, description: e.target.value})} className="w-full p-2 border border-gray-200 rounded-md text-sm bg-gray-50 resize-y focus:ring-2 focus:ring-[#1E88E5] outline-none" placeholder="Brief instructions for the teacher..."></textarea>
                   </div>
                   
                   <div className="lg:col-span-6 flex justify-end">
-                    <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700">Add to Repository</button>
+                    <button type="submit" className="px-6 py-2 bg-[#1E88E5] text-white rounded-md text-sm font-bold hover:bg-blue-600 transition-colors shadow-sm">Add to Repository</button>
                   </div>
                 </form>
               </div>
 
-              <div className="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden">
                 <div className="bg-gray-50 border-b border-gray-200 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <h3 className="font-bold text-gray-800 text-lg">Saved Activities ({filteredRepository.length})</h3>
                   <div className="relative w-full sm:w-72">
@@ -1376,49 +1410,53 @@
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       placeholder="Search repository..." 
-                      className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E88E5] bg-white text-gray-900"
                     />
                   </div>
                 </div>
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-100">
-                      <th className="p-3 border-b text-sm font-bold text-gray-600">Name / Mechanics</th>
-                      <th className="p-3 border-b text-sm font-bold text-gray-600">Category</th>
-                      <th className="p-3 border-b text-sm font-bold text-gray-600">Capacity</th>
-                      <th className="p-3 border-b text-sm font-bold text-gray-600">Materials</th>
-                      <th className="p-3 border-b text-sm font-bold text-gray-600">Goal</th>
-                      <th className="p-3 border-b w-16 text-center">Actions</th>
+                    <tr className="bg-white border-b border-gray-200">
+                      <th className="p-4 text-xs font-bold text-gray-500 tracking-wider">Name / Mechanics</th>
+                      <th className="p-4 text-xs font-bold text-gray-500 tracking-wider">Category</th>
+                      <th className="p-4 text-xs font-bold text-gray-500 tracking-wider">Capacity</th>
+                      <th className="p-4 text-xs font-bold text-gray-500 tracking-wider">Materials</th>
+                      <th className="p-4 text-xs font-bold text-gray-500 tracking-wider">Goal</th>
+                      <th className="p-4 text-xs font-bold text-gray-500 tracking-wider text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredRepository.length > 0 ? (
                       filteredRepository.map(act => (
-                        <tr key={act.id} className="hover:bg-gray-50 border-b">
-                          <td className="p-3">
+                        <tr key={act.id} className="hover:bg-gray-50 border-b border-gray-100 transition-colors">
+                          <td className="p-4">
                             <div className="text-sm font-bold text-gray-800">{act.name}</div>
                             <div className="text-[11px] text-gray-500 mt-1 line-clamp-2" title={act.description}>{act.description || '-'}</div>
                           </td>
-                          <td className="p-3">
+                          <td className="p-4">
                             <div className="flex flex-col gap-1 items-start">
-                              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">{act.category}</span>
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap
-                                ${act.focus === 'Conversation' ? 'bg-green-100 text-green-800' : 
-                                  act.focus === 'Literacy' ? 'bg-purple-100 text-purple-800' : 
-                                  'bg-gray-200 text-gray-800'}`}>
+                              <span className="bg-[#f8fafc] text-[#1E88E5] border border-blue-100 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">{act.category}</span>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap border
+                                ${act.focus === 'Conversation' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                  act.focus === 'Literacy' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
+                                  'bg-gray-50 text-gray-600 border-gray-200'}`}>
                                 {act.focus}
                               </span>
                             </div>
                           </td>
-                          <td className="p-3 text-sm text-gray-600 font-medium whitespace-nowrap">{act.min} - {act.max} students</td>
-                          <td className="p-3 text-sm text-gray-600">{act.materials || '-'}</td>
-                          <td className="p-3 text-sm text-gray-600">{act.goal || '-'}</td>
-                          <td className="p-3 text-center"><button onClick={() => removeActivity(act.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2Icon className="w-4 h-4" /></button></td>
+                          <td className="p-4 text-sm text-gray-600 font-medium whitespace-nowrap">{act.min} - {act.max} students</td>
+                          <td className="p-4 text-sm text-gray-600">{act.materials || '-'}</td>
+                          <td className="p-4 text-sm text-gray-600">{act.goal || '-'}</td>
+                          <td className="p-4 text-center">
+                             <button onClick={() => removeActivity(act.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Delete Activity">
+                               <Trash2Icon className="w-5 h-5 mx-auto" />
+                             </button>
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="6" className="p-8 text-center text-gray-500 font-bold bg-gray-50">
+                        <td colSpan="6" className="p-12 text-center text-gray-500 font-bold bg-white">
                           No activities found matching "{searchQuery}"
                         </td>
                       </tr>
