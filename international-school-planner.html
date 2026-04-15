@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABC Garden - Hello Meeting Planner</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #FAF8F5; /* ABC Garden warm off-white */
+      color: #1f2937;
+    }
+    
+    @media print {
+      @page { size: landscape A4; margin: 8mm; }
+      html, body, #root { 
+        height: auto !important; 
+        overflow: visible !important; 
+        background: white !important; 
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact; 
+      }
+      .no-print { display: none !important; }
+      
+      /* Reset elements to Black & White for print */
+      * {
+        print-color-adjust: exact;
+      }
+
+      .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+    }
+    
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+
+    const generateId = () => Math.random().toString(36).substring(2, 9);
+
+    // --- ICONS ---
+    const SunIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>;
+    const BookOpenIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
+    const UsersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    const PrinterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>;
+    const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>;
+
+    // --- CURRICULUM DATA (Show & Tell Scope & Sequence) ---
+    const curriculumData = {
+      level1: {
+        title: "Level 1",
+        units: [
+          { id: 1, title: "Who's in your family?", vocab: "brother, sister, mom, dad, family, hat, mittens, coat, friend, shoes", structure: "Who's he/she? He's/She's my (dad/mom). Put on your (coat)." },
+          { id: 2, title: "What's this?", vocab: "book, bag, pencil, crayon, doll, boat, teddy bear, bees, doors, old, new", structure: "What's this? It's a (crayon). Find the (boat). It's old/new." },
+          { id: 3, title: "How many eyes?", vocab: "eyes, ears, nose, mouth, head, tummy, hands, feet, arms, legs, hard, soft", structure: "How many (eyes)? I have 2 (eyes). Clap your hands. Shake your head." },
+          { id: 4, title: "What do you ride?", vocab: "car, bus, bike, train, boat, green, pink, purple, plane, balloon, fast, slow, big, small", structure: "Do you have a (bus)? Yes./No. What color is it? It's (green). The (train) is (fast/slow)." },
+          { id: 5, title: "What can you find outside?", vocab: "tree, lake, hill, slide, swing, seed, pot, water", structure: "I see a (tree). I'm big/small. Is it big/small? Yes./No." },
+          { id: 6, title: "What's in the toy box?", vocab: "table, chair, computer, toy box, square, circle, triangle, star, pattern", structure: "Where's the (computer)? It's on/in the (chair). Look at my (toy box)!" },
+          { id: 7, title: "What pets do you like?", vocab: "cat, bird, rabbit, turtle, pet, mouse, cute, favorite", structure: "I like (birds). My favorite pet is a (cat). I (feed) my (pet)." },
+          { id: 8, title: "What can you do?", vocab: "roll a hoop, bounce a balloon, stack cups, blow bubbles, throw, hop, count, jump, fly, crawl, swim", structure: "I can/can't (blow bubbles). Can you (count)? (A mouse) can/can't (swim)." },
+          { id: 9, title: "What snacks do you like?", vocab: "apple, grape, strawberry, banana, pizza, cheese, cookies, pancakes, carrot", structure: "Do you like (apples)? I don't like (pizza). My favorite snack is (a banana)." }
+        ]
+      },
+      level2: {
+        title: "Level 2",
+        units: [
+          { id: 1, title: "How do we make pictures?", vocab: "pen, brush, eraser, paper, glitter, paint, black, white, rock, gray, brown", structure: "What's this? It's an (eraser). This picture uses (orange) (paint)." },
+          { id: 2, title: "What can you do in the park?", vocab: "climb, catch, build, walk, run, kick, quickly, slowly, skip, sandbox", structure: "I can/can't (climb). Can you (climb)? He/She can (run)." },
+          { id: 3, title: "Who makes you happy?", vocab: "happy, sad, tired, hungry, thirsty, grandma, grandpa, brothers, sisters, surprise", structure: "How do you feel today? I'm (happy). I love my (mom). (She) makes me happy." },
+          { id: 4, title: "What happens when it's windy?", vocab: "sunny, rainy, windy, snowy, cold, warm, cloudy, wet, dry, boots, days of week", structure: "What's the weather like today? It's (sunny). What day is it? It's (Sunday)." },
+          { id: 5, title: "What's in your house?", vocab: "kitchen, living room, bedroom, bathroom, yard, balcony, sofa, bed, bath", structure: "I'm (in) the (kitchen). Where's (my duck)? It's behind (the sofa)." },
+          { id: 6, title: "What happens in the garden?", vocab: "dig, plant, water, pick, wash, eat, hole, delicious, potatoes, beans, soup", structure: "What are you doing? I'm (digging a hole). We're (watering) (the beans)." },
+          { id: 7, title: "What do farm animals do?", vocab: "cow, horse, sheep, goat, donkey, chicken, drink, say, do, grass, farm", structure: "What does a (goat) do? It (drinks) (water). The (horses) (eat) (grass)." },
+          { id: 8, title: "What do you wear when it's hot?", vocab: "jacket, skirt, T-shirt, pants, shorts, sandals, sweater, spring, summer, winter", structure: "I'm wearing (a green jacket). What do you wear in the (spring)?" },
+          { id: 9, title: "What do our senses tell us?", vocab: "sound, feel, look, smell, taste, loud, beautiful, quiet, soft, hard, music, rain", structure: "How does it (taste)? It (tastes) good/bad. How does it (feel)? It feels (soft)." }
+        ]
+      },
+      level3: {
+        title: "Level 3",
+        units: [
+          { id: 1, title: "What's your school like?", vocab: "classroom, computer room, art room, schoolyard, paint pictures, read stories", structure: "Welcome to (our school). These children (read stories) in their (classroom)." },
+          { id: 2, title: "What do you like to eat?", vocab: "meat, vegetables, fruit, pasta, rice, milk, breakfast, lunch, dinner, dessert", structure: "Do you like (fruit)? What's for (dinner)? They have (cereal) (for breakfast)." },
+          { id: 3, title: "What happens on your birthday?", vocab: "birthday cake, presents, cards, mask, candles, party, treasure hunt, months", structure: "There's (1) (birthday cake). My birthday is in (June). When's your birthday?" },
+          { id: 4, title: "What's in your neighborhood?", vocab: "swimming pool, zoo, library, supermarket, coffee shop, park, doctor", structure: "Where's (Sam)? He's at the (swimming pool). Do you want to go to the (zoo)?" },
+          { id: 5, title: "How do you have fun?", vocab: "dance, run, jump rope, roller skate, ride a bike, scooter, basketball, soccer", structure: "Are you (riding) scooters? Yes, we are. I love (flying my kite)." },
+          { id: 6, title: "Which animals live in the wild?", vocab: "elephant, giraffe, crocodile, monkey, lion, parrot, wild, neck, teeth, tail", structure: "What are they? They're (lions). Do they have (big) teeth?" },
+          { id: 7, title: "What jobs do people do?", vocab: "chef, police officer, firefighter, nurse, taxi driver, vet, hospital, work", structure: "Is he a (police officer)? He (works) in a (hospital)." },
+          { id: 8, title: "How do we make music?", vocab: "flute, piano, drums, tambourine, shaker, guitar, louder, quieter, slower, faster", structure: "I'm playing the (flute). Listen to the (trumpet). The music gets (louder)." },
+          { id: 9, title: "When do we change our clothes?", vocab: "tracksuit, shirt, sneakers, jeans, pajamas, costume, cape, superhero, mask", structure: "Is he wearing (blue jeans)? He's (putting on) his (jeans). Whose (hat) is this?" }
+        ]
+      }
+    };
+
+    // --- BOOK LIBRARY DATABASE ---
+    const initialBooks = [
+      // Family / Feelings / Routines
+      { id: 'b1', title: 'Llama Llama Gram and Grandpa', author: 'Anna Dewdney', targetLevel: 'level1', targetUnit: 1, tags: ['Family', 'Routines'], description: 'Llama Llama visits his grandparents and experiences staying away from home, highlighting extended family.', goal: 'Learn extended family vocabulary (Gram, Grandpa) and discuss feelings of missing home.' },
+      { id: 'b2', title: 'Guess How Much I Love You', author: 'Sam McBratney', targetLevel: 'level1', targetUnit: 1, tags: ['Family', 'Feelings'], description: 'Little Nutbrown Hare and his father try to measure how much they love each other.', goal: 'Explore family bonds and practice size/measurement words (big, far, high).' },
+      { id: 'b3', title: 'A Bit Lost', author: 'Chris Haughton', targetLevel: 'level1', targetUnit: 1, tags: ['Family', 'Animals'], description: 'A little owl falls from his nest and needs help finding his mommy, meeting other animals along the way.', goal: 'Identify family members (mommy) and practice describing physical characteristics.' },
+      { id: 'b4', title: 'Oh No, George!', author: 'Chris Haughton', targetLevel: 'level2', targetUnit: 3, tags: ['Feelings', 'Behavior'], description: 'George the dog tries to be good while his owner is out, but temptations are everywhere.', goal: 'Discuss feelings, choices, making mistakes, and saying sorry.' },
+      { id: 'b5', title: 'Don\'t Worry, Little Crab', author: 'Chris Haughton', targetLevel: 'level2', targetUnit: 3, tags: ['Feelings', 'Bravery', 'Ocean'], description: 'Little Crab is scared to go into the big ocean, but Very Big Crab helps him be brave.', goal: 'Explore feelings of fear and bravery, and learn ocean vocabulary.' },
+      { id: 'b6', title: 'Goodnight Everyone', author: 'Chris Haughton', targetLevel: 'level3', targetUnit: 9, tags: ['Bedtime', 'Routines', 'Animals'], description: 'All the animals in the forest are sleepy except for Little Bear. A calming bedtime journey.', goal: 'Reinforce daily routines (going to sleep) and nighttime vocabulary.' },
+      { id: 'b7', title: 'Sesame Street Nighty-Night', author: 'Sesame Workshop', targetLevel: 'level3', targetUnit: 9, tags: ['Bedtime', 'Routines'], description: 'Big Bird and friends get ready for bed.', goal: 'Practice bedtime routines and vocabulary (pajamas, sleep, bed).' },
+      { id: 'b8', title: 'Sesame Street Bedtime', author: 'Sesame Workshop', targetLevel: 'level3', targetUnit: 9, tags: ['Bedtime', 'Routines'], description: 'Elmo gets ready for a good night\'s rest.', goal: 'Identify steps in a nighttime routine.' },
+
+      // Animals / Pets / Farm / Wild
+      { id: 'b9', title: 'Dear Zoo', author: 'Rod Campbell', targetLevel: 'level1', targetUnit: 7, tags: ['Pets', 'Wild Animals', 'Adjectives'], description: 'A child writes to the zoo for a pet. The zoo sends various animals, but each has a problem until the perfect pet arrives.', goal: 'Practice animal names and descriptive adjectives (too heavy, too tall).' },
+      { id: 'b10', title: 'Baby Koala', author: 'Finger Puppet Book', targetLevel: 'level1', targetUnit: 7, tags: ['Pets', 'Animals', 'Interactive'], description: 'A simple interactive finger puppet book about a baby koala.', goal: 'Engage students with interactive storytelling and introduce cute animal vocabulary.' },
+      { id: 'b11', title: 'My First Peek-A-Boo Animals', author: 'Eric Carle', targetLevel: 'level1', targetUnit: 7, tags: ['Animals', 'Guessing'], description: 'Lift the flaps to guess and discover different animals based on visual clues.', goal: 'Practice animal vocabulary and asking/answering "What is it?".' },
+      { id: 'b12', title: 'Panda Bear, Panda Bear, What Do You See?', author: 'Bill Martin Jr / Eric Carle', targetLevel: 'level3', targetUnit: 6, tags: ['Wild Animals', 'Senses'], description: 'Various endangered animals are observed in their habitats.', goal: 'Learn wild animal vocabulary and practice the structure "What do you see? I see a...".' },
+      { id: 'b13', title: 'Poppy Says Hello', author: 'KiwiCo', targetLevel: 'level2', targetUnit: 7, tags: ['Farm Animals', 'Greetings'], description: 'A panda visits a farm and says hello to all the animals.', goal: 'Learn farm animal vocabulary, animal sounds, and practice basic greetings.' },
+      
+      // Body / Actions / Senses
+      { id: 'b14', title: 'From Head to Toe', author: 'Eric Carle', targetLevel: 'level1', targetUnit: 3, tags: ['Body Parts', 'Actions', 'Animals'], description: 'Animals introduce different body movements and ask the reader to copy them ("Can you do it?").', goal: 'Practice body parts (head, neck, shoulders) and action verbs (turn, bend, thump).' },
+      { id: 'b15', title: 'Ten Tiny Toes', author: 'Caroline Jayne Church', targetLevel: 'level1', targetUnit: 3, tags: ['Body Parts', 'Rhyme'], description: 'A sweet rhyming book celebrating all the parts of a baby\'s body, ending with ten tiny toes.', goal: 'Identify basic body parts (mouth, ears, eyes, toes) through repetition.' },
+      { id: 'b16', title: 'Five Little Monkeys Jumping on the Bed', author: 'Eileen Christelow', targetLevel: 'level2', targetUnit: 2, tags: ['Actions', 'Numbers', 'Rhyme'], description: 'Five monkeys jump on the bed, fall off, and bump their heads one by one.', goal: 'Practice counting down from 5, action verbs (jump, fall), and body parts (head).' },
+      { id: 'b17', title: 'There\'s a Monster in Your Book', author: 'Tom Fletcher', targetLevel: 'level1', targetUnit: 8, tags: ['Actions', 'Interactive', 'Fun'], description: 'An interactive book asking the reader to shake, blow, and tilt the book to get rid of a monster.', goal: 'Practice following action commands (shake, blow, tilt, spin).' },
+      { id: 'b18', title: 'Get Moving with Elmo!', author: 'Sesame Workshop', targetLevel: 'level3', targetUnit: 5, tags: ['Actions', 'Sports', 'Fun'], description: 'Elmo demonstrates fun ways to stay active and move his body.', goal: 'Learn verbs related to sports, exercise, and having fun (run, jump, stretch).' },
+
+      // School / Manners / Food
+      { id: 'b19', title: 'How Do Dinosaurs Go to School?', author: 'Jane Yolen & Mark Teague', targetLevel: 'level3', targetUnit: 1, tags: ['School', 'Rules', 'Behavior'], description: 'Dinosaurs demonstrate both bad and good behaviors in a school setting.', goal: 'Discuss school rules, appropriate classroom behavior, and vocabulary like "desk", "class".' },
+      { id: 'b20', title: 'Excuse Me! A Little Book of Manners', author: 'Karen Katz', targetLevel: 'level3', targetUnit: 1, tags: ['Manners', 'School', 'Routines'], description: 'A lift-the-flap book teaching basic polite phrases for everyday situations.', goal: 'Learn and practice functional polite language: "Please", "Thank you", "Excuse me".' },
+      { id: 'b21', title: 'Oscar\'s First Book of Manners', author: 'Sesame Workshop', targetLevel: 'level3', targetUnit: 1, tags: ['Manners', 'Behavior'], description: 'Even a grouch like Oscar learns about basic manners (in his own way).', goal: 'Contrast polite and impolite behavior to reinforce school rules.' },
+      { id: 'b22', title: 'How Do Dinosaurs Eat Their Food?', author: 'Jane Yolen & Mark Teague', targetLevel: 'level3', targetUnit: 2, tags: ['Food', 'Meals', 'Manners'], description: 'Dinosaurs show the wrong and right ways to behave at the dinner table.', goal: 'Learn food vocabulary and discuss proper mealtime manners.' },
+      { id: 'b23', title: 'Green Eggs and Ham', author: 'Dr. Seuss', targetLevel: 'level3', targetUnit: 2, tags: ['Food', 'Preferences', 'Rhyme'], description: 'Sam-I-Am persistently asks a friend to try a very unusual dish in various locations.', goal: 'Practice food preferences ("I do not like...") and the concept of trying new things.' },
+
+      // Colors / Nature / Opposites / Concepts
+      { id: 'b24', title: 'little blue and little yellow', author: 'Leo Lionni', targetLevel: 'level2', targetUnit: 1, tags: ['Colors', 'Art', 'Friendship'], description: 'Abstract color spots become friends. When blue and yellow hug, they become green.', goal: 'Understand primary colors, color mixing (art), and the value of friendship.' },
+      { id: 'b25', title: 'One Duck Stuck', author: 'Phyllis Root', targetLevel: 'level2', targetUnit: 6, tags: ['Nature', 'Numbers', 'Animals'], description: 'A counting book where various groups of marsh animals try to help a duck stuck in the muck.', goal: 'Practice counting 1-10, learn nature vocabulary (marsh, muck), and teamwork.' },
+      { id: 'b26', title: 'Where\'s the Fish?', author: 'Taro Gomi', targetLevel: 'level1', targetUnit: 5, tags: ['Finding', 'Colors', 'Nature'], description: 'A bright pink fish escapes its bowl and hides in various places around the house and outside.', goal: 'Practice observation skills, colors, and prepositions of place (in, on, behind).' },
+      { id: 'b27', title: 'How Do Dinosaurs Go Up and Down?', author: 'Jane Yolen & Mark Teague', targetLevel: 'level1', targetUnit: 2, tags: ['Opposites', 'Dinosaurs'], description: 'Dinosaurs demonstrate basic opposite concepts.', goal: 'Learn fundamental pairs of opposites (up/down, fast/slow, loud/quiet).' },
+      { id: 'b28', title: 'Still Stuck', author: 'Shinsuke Yoshitake', targetLevel: 'level2', targetUnit: 8, tags: ['Clothes', 'Funny'], description: 'A boy gets his shirt stuck over his head while undressing and imagines life staying that way.', goal: 'Learn clothing vocabulary (shirt, pants) and problem-solving.' },
+
+      // General / Alphabet / Numbers / Rhyme
+      { id: 'b29', title: 'Chicka Chicka Boom Boom', author: 'Bill Martin Jr', targetLevel: 'general', targetUnit: 0, tags: ['Alphabet', 'Rhyme'], description: 'All the lowercase letters of the alphabet race to the top of a coconut tree.', goal: 'Recognize alphabet letters and enjoy rhythmic language.' },
+      { id: 'b30', title: 'Alphaprints 123', author: 'Roger Priddy', targetLevel: 'general', targetUnit: 0, tags: ['Numbers', 'Counting', 'Art'], description: 'Animals made from fingerprints and everyday objects help children count.', goal: 'Practice number recognition and counting.' },
+      { id: 'b31', title: 'The Cat in the Hat', author: 'Dr. Seuss', targetLevel: 'general', targetUnit: 0, tags: ['Rhyme', 'Fun', 'Weather'], description: 'A giant cat brings chaos to two children stuck inside on a rainy day.', goal: 'Enjoy rhyming sounds and discuss indoor rainy day activities.' },
+      { id: 'b32', title: 'One fish two fish red fish blue fish', author: 'Dr. Seuss', targetLevel: 'general', targetUnit: 0, tags: ['Colors', 'Numbers', 'Opposites'], description: 'A whimsical exploration of colors, numbers, and imaginative creatures.', goal: 'Reinforce colors, counting, and simple descriptive words.' },
+      { id: 'b33', title: 'Shh! We Have a Plan', author: 'Chris Haughton', targetLevel: 'level1', targetUnit: 6, tags: ['Colors', 'Night', 'Birds'], description: 'Three hunters try to sneak up on a beautiful bird, while the youngest tries to just say hello.', goal: 'Discuss colors (blue palette), shapes, and the concept of gentle interaction vs capturing.' },
+      { id: 'b34', title: 'Bam and Kero Go Shopping', author: 'Yuka Shimada', targetLevel: 'level3', targetUnit: 4, tags: ['Neighborhood', 'Shopping'], description: 'A dog and a frog visit an outdoor market on a Wednesday to buy supplies.', goal: 'Learn vocabulary related to shops, markets, and items found in a neighborhood.' },
+      { id: 'b35', title: 'Music Under the Sea', author: 'Baby Einstein', targetLevel: 'level3', targetUnit: 8, tags: ['Music', 'Ocean'], description: 'Ocean animals play different musical instruments.', goal: 'Identify musical instruments (piano, drum, etc.) and explore the concept of making music.' }
+    ];
+
+    const App = () => {
+      const [activeTab, setActiveTab] = useState('planner');
+      const [selectedLevel, setSelectedLevel] = useState('level1');
+      const [selectedUnit, setSelectedUnit] = useState(1);
+      
+      const [books, setBooks] = useState(() => {
+        const saved = localStorage.getItem('abc_hello_books');
+        return saved ? JSON.parse(saved) : initialBooks;
+      });
+
+      const [roster, setRoster] = useState(() => {
+        const saved = localStorage.getItem('abc_hello_roster');
+        return saved ? JSON.parse(saved) : [
+          { id: 's1', name: 'Aiden', present: true },
+          { id: 's2', name: 'Bella', present: true },
+          { id: 's3', name: 'Charlie', present: true },
+          { id: 's4', name: 'Diana', present: true },
+          { id: 's5', name: 'Ethan', present: true }
+        ];
+      });
+
+      // Save to local storage
+      useEffect(() => { localStorage.setItem('abc_hello_books', JSON.stringify(books)); }, [books]);
+      useEffect(() => { localStorage.setItem('abc_hello_roster', JSON.stringify(roster)); }, [roster]);
+
+      // Helper to find books for the selected unit
+      const generatedPlan = useMemo(() => {
+        const currentUnitBooks = books.filter(b => b.targetLevel === selectedLevel && b.targetUnit === Number(selectedUnit));
+        const generalBooks = books.filter(b => b.targetLevel === 'general');
+        const fallbackBooks = books.filter(b => b.targetLevel !== selectedLevel || b.targetUnit !== Number(selectedUnit));
+        
+        // Shuffle helper
+        const shuffle = (array) => array.sort(() => 0.5 - Math.random());
+
+        let planBooks = [...currentUnitBooks];
+        
+        // Fill up to 4 books if needed
+        if (planBooks.length < 4) {
+          const needed = 4 - planBooks.length;
+          const fillers = shuffle([...generalBooks]).slice(0, needed);
+          planBooks = [...planBooks, ...fillers];
+        }
+        if (planBooks.length < 4) {
+          const needed = 4 - planBooks.length;
+          const fillers = shuffle([...fallbackBooks]).slice(0, needed);
+          planBooks = [...planBooks, ...fillers];
+        }
+
+        // Return exactly 4 for the month
+        return planBooks.slice(0, 4);
+      }, [selectedLevel, selectedUnit, books]);
+
+      const currentUnitData = curriculumData[selectedLevel].units.find(u => u.id === Number(selectedUnit));
+
+      // UI Components
+      const TabButton = ({ id, icon: Icon, label }) => (
+        <button
+          onClick={() => setActiveTab(id)}
+          className={`flex items-center gap-2 px-5 py-3 font-bold rounded-t-xl transition-all border-b-4 ${activeTab === id ? 'bg-white text-[#1E88E5] border-[#1E88E5] shadow-sm' : 'bg-[#f0ece1] text-gray-500 border-transparent hover:bg-[#e6e1d6]'}`}
+        >
+          <Icon /> {label}
+        </button>
+      );
+
+      const handleAddStudent = () => {
+        const name = prompt("Enter student name:");
+        if (name) setRoster([...roster, { id: generateId(), name, present: true }]);
+      };
+
+      return (
+        <div className="min-h-screen p-4 sm:p-8 print:p-0 print:min-h-0 print:h-auto overflow-visible print:bg-white">
+          {/* Header */}
+          <div className="max-w-6xl mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4 no-print">
+            <div>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="abc-horizontal-block-tilted-mono.png" 
+                  alt="ABC Garden Logo" 
+                  className="h-12 w-auto object-contain"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+                <h1 className="text-3xl font-black hidden text-gray-800">ABC Garden</h1>
+              </div>
+              <p className="text-gray-500 font-bold ml-1 mt-1">Hello Meeting Smart Planner (9:00 - 9:30 AM)</p>
+            </div>
+            <div className="flex gap-2">
+               <button 
+                 onClick={() => {
+                   setActiveTab('planner');
+                   setTimeout(() => window.print(), 200);
+                 }} 
+                 className="flex items-center gap-2 px-4 py-2 bg-[#1E88E5] text-white font-bold rounded-lg hover:bg-blue-600 transition shadow-sm"
+               >
+                 <PrinterIcon /> Print Plan
+               </button>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="max-w-6xl mx-auto flex gap-2 border-b-4 border-gray-200 mb-6 no-print">
+            <TabButton id="planner" icon={SunIcon} label="Monthly Planner" />
+            <TabButton id="books" icon={BookOpenIcon} label="Book Library" />
+            <TabButton id="roster" icon={UsersIcon} label="Class Roster" />
+          </div>
+
+          {/* --- TAB: PLANNER --- */}
+          {activeTab === 'planner' && (
+            <div className="max-w-6xl mx-auto space-y-6 print:space-y-0">
+              
+              {/* Controls */}
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-wrap gap-6 items-end no-print">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Curriculum Level</label>
+                  <select 
+                    value={selectedLevel} 
+                    onChange={e => { setSelectedLevel(e.target.value); setSelectedUnit(1); }}
+                    className="p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-[#1E88E5]"
+                  >
+                    <option value="level1">Show & Tell 1</option>
+                    <option value="level2">Show & Tell 2</option>
+                    <option value="level3">Show & Tell 3</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Target Unit (Month)</label>
+                  <select 
+                    value={selectedUnit} 
+                    onChange={e => setSelectedUnit(e.target.value)}
+                    className="p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-[#1E88E5] min-w-[250px]"
+                  >
+                    {curriculumData[selectedLevel].units.map(u => (
+                      <option key={u.id} value={u.id}>Unit {u.id}: {u.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 font-medium italic">
+                    The planner automatically assigns 4 relevant books from your library based on the Unit selected.
+                  </p>
+                </div>
+              </div>
+
+              {/* Printable Planner Area */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 print:p-0 print:shadow-none print:border-none print:bg-white">
+                
+                {/* Header Information */}
+                <div className="border-b-4 print:border-b-2 print:border-black border-gray-100 pb-6 print:pb-2 mb-6 print:mb-2">
+                  <h2 className="text-3xl print:text-2xl font-black text-gray-800 print:text-black">
+                    {curriculumData[selectedLevel].title} - Unit {selectedUnit}: <span className="text-[#1E88E5] print:text-black">{currentUnitData.title}</span>
+                  </h2>
+                  <div className="mt-4 print:mt-2 grid grid-cols-1 md:grid-cols-2 gap-6 print:gap-2 bg-gray-50 print:bg-white p-4 print:p-2 rounded-xl print:border-2 print:border-black print:rounded-lg">
+                    <div>
+                      <h4 className="text-xs print:text-[10px] font-bold text-gray-500 print:text-black uppercase tracking-wider mb-1 print:mb-0">Target Vocabulary</h4>
+                      <p className="text-gray-800 print:text-black font-semibold print:text-sm">{currentUnitData.vocab}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-xs print:text-[10px] font-bold text-gray-500 print:text-black uppercase tracking-wider mb-1 print:mb-0">Target Structures</h4>
+                      <p className="text-gray-800 print:text-black font-semibold print:text-sm">{currentUnitData.structure}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* The 4-Week Grid */}
+                <h3 className="text-xl print:text-lg font-black text-gray-800 mb-4 print:mb-1 print:text-black">Books of the Week</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 print:grid-cols-2 gap-6 print:gap-2 mb-8 print:mb-2">
+                  {generatedPlan.map((book, idx) => {
+                    const weekColors = [
+                      { header: 'bg-[#E53935]', text: 'text-white' },
+                      { header: 'bg-[#FBC02D]', text: 'text-gray-900' },
+                      { header: 'bg-[#1E88E5]', text: 'text-white' },
+                      { header: 'bg-[#43A047]', text: 'text-white' }
+                    ];
+                    const color = weekColors[idx % 4];
+
+                    return (
+                    <div key={idx} className="flex flex-col border-2 border-gray-100 print:border-black rounded-2xl print:rounded-lg overflow-hidden print-break-inside-avoid shadow-sm">
+                      <div className={`${color.header} ${color.text} print:bg-transparent print:border-b-2 print:border-black print:text-black px-4 py-2 print:px-2 print:py-1 font-black flex justify-between`}>
+                        <span>Week {idx + 1}</span>
+                        <span className="opacity-90 print:opacity-100 print:text-black text-sm print:text-xs">
+                          {book.targetLevel !== selectedLevel || book.targetUnit !== Number(selectedUnit) ? '(Supplement Book)' : '(Unit Target Book)'}
+                        </span>
+                      </div>
+                      <div className="p-5 print:p-2 flex-1 bg-white flex flex-col gap-3 print:gap-1">
+                        <div>
+                          <h4 className="font-black text-xl print:text-base text-gray-900 print:text-black leading-tight">{book.title}</h4>
+                          <p className="text-sm print:text-xs text-gray-500 print:text-black font-bold">by {book.author}</p>
+                        </div>
+                        <div className="flex gap-2 print:gap-1 flex-wrap">
+                          {book.tags.map(tag => (
+                            <span key={tag} className="text-[10px] print:text-[9px] bg-gray-100 print:bg-transparent text-gray-600 print:text-black print:border print:border-black font-bold px-2 py-1 print:px-1 print:py-0 rounded-md uppercase">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="mt-auto pt-3 print:pt-1 border-t border-gray-100 print:border-gray-400">
+                          <p className="text-xs print:text-[10px] font-bold text-gray-400 print:text-black uppercase tracking-wider mb-1 print:mb-0">Teaching Focus</p>
+                          <p className="text-sm print:text-[11px] text-gray-800 print:text-black font-medium leading-tight">{book.goal}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )})}
+                </div>
+
+                {/* Daily 30 Min Breakdown Template */}
+                <h3 className="text-xl print:text-lg font-black text-gray-800 mb-4 print:mb-1 print:text-black print-break-inside-avoid mt-8 print:mt-2">Daily Hello Meeting Routine (30 mins)</h3>
+                <div className="bg-gray-50 print:bg-transparent rounded-2xl print:rounded-lg border border-gray-200 print:border-2 print:border-black overflow-hidden print-break-inside-avoid">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-200 print:bg-transparent text-gray-700 print:text-black border-b print:border-b-2 print:border-black">
+                        <th className="p-3 print:p-1.5 font-black text-sm print:text-xs w-24 print:w-24 border-r border-gray-300 print:border-black">Time</th>
+                        <th className="p-3 print:p-1.5 font-black text-sm print:text-xs w-32 print:w-32 border-r border-gray-300 print:border-black">Section</th>
+                        <th className="p-3 print:p-1.5 font-black text-sm print:text-xs">Activity & Goal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-gray-200 print:border-black">
+                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:00 - 9:05</td>
+                        <td className="p-3 print:p-1 font-bold text-gray-800 print:text-black border-r border-gray-200 print:border-black bg-white print:bg-transparent text-sm print:text-xs">Welcome</td>
+                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-700 print:text-black bg-white print:bg-transparent leading-tight"><span className="font-bold text-[#1E88E5] print:text-black">Attendance & Greetings.</span> Ask "How are you?" or Unit-specific opening questions.</td>
+                      </tr>
+                      <tr className="border-b border-gray-200 print:border-black">
+                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:05 - 9:10</td>
+                        <td className="p-3 print:p-1 font-bold text-gray-800 print:text-black border-r border-gray-200 print:border-black bg-white print:bg-transparent text-sm print:text-xs">Warm-up</td>
+                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-700 print:text-black bg-white print:bg-transparent leading-tight"><span className="font-bold text-[#1E88E5] print:text-black">Song / Movement.</span> Sing the Show & Tell unit song or practice action verbs.</td>
+                      </tr>
+                      <tr className="border-b border-gray-200 print:border-black">
+                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:10 - 9:20</td>
+                        <td className="p-3 print:p-1 font-black text-[#E53935] print:text-black border-r border-gray-200 print:border-black bg-[#fff5f5] print:bg-transparent text-sm print:text-xs">Story Time</td>
+                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-800 print:text-black bg-[#fff5f5] print:bg-transparent leading-tight"><span className="font-bold">Read the Book of the Week.</span> Emphasize the weekly <em>Teaching Focus</em>. Ask questions relating the story to the unit's Big Question.</td>
+                      </tr>
+                      <tr className="border-b border-gray-200 print:border-black">
+                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:20 - 9:25</td>
+                        <td className="p-3 print:p-1 font-bold text-gray-800 print:text-black border-r border-gray-200 print:border-black bg-white print:bg-transparent text-sm print:text-xs">Concept Review</td>
+                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-700 print:text-black bg-white print:bg-transparent leading-tight"><span className="font-bold text-[#1E88E5] print:text-black">Target Vocabulary Practice.</span> Flashcards, simple games, or discussing the book's themes.</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 print:p-1 font-bold text-gray-600 print:text-black border-r border-gray-200 print:border-black text-sm print:text-xs">9:25 - 9:30</td>
+                        <td className="p-3 print:p-1 font-bold text-gray-800 print:text-black border-r border-gray-200 print:border-black bg-white print:bg-transparent text-sm print:text-xs">Transition</td>
+                        <td className="p-3 print:p-1 text-sm print:text-xs text-gray-700 print:text-black bg-white print:bg-transparent leading-tight"><span className="font-bold text-[#1E88E5] print:text-black">Wrap up & Restroom.</span> Prepare students for the transition to Outdoor Time.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* --- TAB: BOOK LIBRARY --- */}
+          {activeTab === 'books' && (
+            <div className="max-w-6xl mx-auto space-y-6 no-print">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                  <h2 className="text-2xl font-black text-gray-800">Book Database ({books.length})</h2>
+                  <p className="text-sm font-bold text-[#1E88E5] bg-blue-50 px-3 py-1 rounded-full">All transcribed books mapped to units</p>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
+                        <th className="p-4 font-bold border-b border-gray-200">Title & Author</th>
+                        <th className="p-4 font-bold border-b border-gray-200">Mapped Unit</th>
+                        <th className="p-4 font-bold border-b border-gray-200">Tags</th>
+                        <th className="p-4 font-bold border-b border-gray-200 max-w-xs">Teaching Focus</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {books.map(book => (
+                        <tr key={book.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="p-4 align-top">
+                            <div className="font-black text-gray-800 text-sm">{book.title}</div>
+                            <div className="text-xs text-gray-500 font-semibold">{book.author}</div>
+                          </td>
+                          <td className="p-4 align-top whitespace-nowrap">
+                            {book.targetLevel === 'general' ? (
+                              <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-100">General Use</span>
+                            ) : (
+                              <span className="text-xs font-bold text-[#1E88E5] bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                                {book.targetLevel.replace('level', 'L')} - Unit {book.targetUnit}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-4 align-top max-w-[150px]">
+                            <div className="flex flex-wrap gap-1">
+                              {book.tags.map(tag => <span key={tag} className="text-[9px] bg-gray-100 text-gray-600 font-bold px-1.5 py-0.5 rounded uppercase">{tag}</span>)}
+                            </div>
+                          </td>
+                          <td className="p-4 align-top text-xs text-gray-600 font-medium max-w-xs">
+                            <span className="block mb-1 text-gray-400 font-bold">Desc: <span className="font-normal text-gray-600">{book.description}</span></span>
+                            <span className="block text-[#E53935] font-bold">Goal: <span className="font-normal text-gray-800">{book.goal}</span></span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- TAB: ROSTER --- */}
+          {activeTab === 'roster' && (
+            <div className="max-w-4xl mx-auto space-y-6 no-print">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-2xl font-black text-gray-800">Full-Day Class Roster</h2>
+                    <p className="text-sm text-gray-500 font-medium">9:00 AM - 3:00 PM Students</p>
+                  </div>
+                  <button onClick={handleAddStudent} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition">
+                    <PlusIcon /> Add Student
+                  </button>
+                </div>
+                
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                     <tr className="bg-gray-50 border-b border-gray-200">
+                       <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Student Name</th>
+                       <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center w-24">Present?</th>
+                       <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center w-24">Action</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {roster.map(student => (
+                      <tr key={student.id} className="hover:bg-gray-50">
+                        <td className="p-4">
+                          <input 
+                            type="text" 
+                            value={student.name}
+                            onChange={(e) => setRoster(roster.map(s => s.id === student.id ? {...s, name: e.target.value} : s))}
+                            className="w-full bg-transparent font-bold text-lg text-gray-800 outline-none focus:border-b-2 focus:border-[#1E88E5]"
+                          />
+                        </td>
+                        <td className="p-4 text-center">
+                          <input 
+                            type="checkbox" 
+                            checked={student.present}
+                            onChange={(e) => setRoster(roster.map(s => s.id === student.id ? {...s, present: e.target.checked} : s))}
+                            className="w-5 h-5 text-[#1E88E5] rounded border-gray-300 focus:ring-[#1E88E5] cursor-pointer"
+                          />
+                        </td>
+                        <td className="p-4 text-center">
+                          <button 
+                            onClick={() => setRoster(roster.filter(s => s.id !== student.id))}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {roster.length === 0 && (
+                      <tr><td colSpan="3" className="p-8 text-center text-gray-500 font-medium">No students in roster.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
