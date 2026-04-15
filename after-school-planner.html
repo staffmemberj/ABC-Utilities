@@ -119,6 +119,55 @@
     const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const categories = ['Warm-up', 'Song/Chant', 'Conversation', 'Vocabulary', 'Structure', 'Phonics', 'Desk Work', 'Wrap-up'];
 
+    // --- CALENDAR SYSTEM HELPERS ---
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    
+    const getWeeksForMonth = (year, month) => {
+        const w = [];
+        const firstDay = new Date(year, month, 1);
+        let dayOfWeek = firstDay.getDay(); 
+        let offset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; 
+        
+        let currentMonday = new Date(year, month, 1 + offset);
+        
+        for (let i = 0; i < 6; i++) {
+            const mon = new Date(currentMonday);
+            const tue = new Date(currentMonday.getFullYear(), currentMonday.getMonth(), currentMonday.getDate() + 1);
+            const wed = new Date(currentMonday.getFullYear(), currentMonday.getMonth(), currentMonday.getDate() + 2);
+            const thu = new Date(currentMonday.getFullYear(), currentMonday.getMonth(), currentMonday.getDate() + 3);
+            const fri = new Date(currentMonday.getFullYear(), currentMonday.getMonth(), currentMonday.getDate() + 4);
+            
+            // Only add if at least one workday falls in the selected month
+            if (mon.getMonth() === month || tue.getMonth() === month || wed.getMonth() === month || thu.getMonth() === month || fri.getMonth() === month) {
+                w.push({
+                    label: `${mon.getMonth()+1}/${mon.getDate()} - ${fri.getMonth()+1}/${fri.getDate()}`,
+                    dates: { 'Monday': mon, 'Tuesday': tue, 'Wednesday': wed, 'Thursday': thu, 'Friday': fri }
+                });
+            }
+            currentMonday.setDate(currentMonday.getDate() + 7);
+        }
+        return w;
+    };
+
+    const formatDateForHeader = (date) => {
+        if (!date) return '';
+        const nth = (d) => {
+            if (d > 3 && d < 21) return 'th';
+            switch (d % 10) {
+                case 1:  return "st";
+                case 2:  return "nd";
+                case 3:  return "rd";
+                default: return "th";
+            }
+        };
+        return `${monthNames[date.getMonth()]} ${date.getDate()}${nth(date.getDate())}, ${date.getFullYear()}`;
+    };
+
+    const displayShortDate = (date) => {
+        if (!date) return '';
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+    };
+
     // --- CURRICULUM LOGIC ---
     const programConfig = {
       fun: {
@@ -295,28 +344,65 @@
 
     const App = () => {
       const [activeTab, setActiveTab] = useState('planner'); 
-      const [activeProgram, setActiveProgram] = useState('fun');
+      const [activeProgram, setActiveProgram] = useState('both');
       const [activeDay, setActiveDay] = useState('Monday');
       const [selectedBook, setSelectedBook] = useState('lb1');
       const [selectedUnit, setSelectedUnit] = useState(1);
 
+      // --- CALENDAR SYSTEM STATE ---
+      const currentYear = new Date().getFullYear();
+      const [calYear, setCalYear] = useState(currentYear);
+      const [calMonth, setCalMonth] = useState(new Date().getMonth());
+      const [calWeek, setCalWeek] = useState(0);
+
+      const weeks = useMemo(() => getWeeksForMonth(calYear, calMonth), [calYear, calMonth]);
+
+      useEffect(() => {
+        if (calWeek >= weeks.length) setCalWeek(0);
+      }, [weeks, calWeek]);
+
+      const currentWeekDates = weeks[calWeek]?.dates || {};
+
       // --- ROSTER STATE ---
-      const [roster, setRoster] = useState([
-        { id: generateId(), name: '', schedule: { 'Monday': 'None', 'Tuesday': 'None', 'Wednesday': 'None', 'Thursday': 'None', 'Friday': 'None' } }
-      ]);
+      const [roster, setRoster] = useState(() => {
+        const saved = localStorage.getItem('abc_garden_roster');
+        if (saved) {
+          try {
+            return JSON.parse(saved);
+          } catch (e) {
+            console.error('Failed to parse roster from local storage', e);
+          }
+        }
+        return [
+          { id: generateId(), name: '', schedule: { 'Monday': 'None', 'Tuesday': 'None', 'Wednesday': 'None', 'Thursday': 'None', 'Friday': 'None' } }
+        ];
+      });
+
+      useEffect(() => {
+        localStorage.setItem('abc_garden_roster', JSON.stringify(roster));
+      }, [roster]);
 
       // HOLIDAYS STATE
       const [holidays, setHolidays] = useState({ 'Monday': false, 'Tuesday': false, 'Wednesday': false, 'Thursday': false, 'Friday': false });
 
-      // Get accurate student counts per day based on the roster and currently active program
+      // Get accurate student counts per day based on the roster and program
       const getStudentCount = (day, program) => {
+        if (program === 'both') {
+          return roster.filter(s => ['fun', 'step', 'Both'].includes(s.schedule[day])).length;
+        }
         return roster.filter(s => s.schedule[day] === program || s.schedule[day] === 'Both').length;
       };
 
-      // Determine if a day is completely off (explicit holiday or zero students)
-      const isDayOff = (day) => holidays[day] || getStudentCount(day, activeProgram) === 0;
+      // Determine if a day is completely off
+      const isDayOff = (day, program) => {
+        if (holidays[day]) return true;
+        if (program === 'both') {
+          return getStudentCount(day, 'fun') === 0 && getStudentCount(day, 'step') === 0;
+        }
+        return getStudentCount(day, program) === 0;
+      };
 
-      // UPDATED: Added book and unit tracking to targets state
+      // Targets tracking both programs
       const [targets, setTargets] = useState({
         fun: { vocab: '', sentences: '', phonics: '', book: '', unit: '' },
         step: { vocab: '', sentences: '', phonics: '', book: '', unit: '' }
@@ -331,65 +417,69 @@
 
       // --- DERIVED PLAN (Auto-fill Logic with FOCUS filtering) ---
       const derivedPlan = useMemo(() => {
-        const currentBlocks = programConfig[activeProgram].blocks;
-        const newPlan = { ...(plans[activeProgram] || {}) };
-        const targetFocus = activeProgram === 'fun' ? 'Conversation' : 'Literacy';
+        const newPlans = { fun: { ...plans.fun }, step: { ...plans.step } };
         
-        weekDays.forEach(day => {
-          if (isDayOff(day)) return;
-          
-          const rawCount = getStudentCount(day, activeProgram);
-          const currentEffectiveCount = rawCount <= 1 ? 2 : rawCount; // Teacher steps in if 0 or 1 student to guarantee plan generation
+        ['fun', 'step'].forEach(program => {
+           const currentBlocks = programConfig[program].blocks;
+           const targetFocus = program === 'fun' ? 'Conversation' : 'Literacy';
+           
+           weekDays.forEach(day => {
+             if (isDayOff(day, program)) return;
+             
+             const rawCount = getStudentCount(day, program);
+             const currentEffectiveCount = rawCount <= 1 ? 2 : rawCount; 
 
-          currentBlocks.forEach(block => {
-            const validOptions = repository.filter(a => 
-              block.allowedTypes.includes(a.category) && 
-              currentEffectiveCount >= a.min && currentEffectiveCount <= a.max &&
-              (a.focus === targetFocus || a.focus === 'Both')
-            );
-            
-            // Re-validate selection if student count changes
-            if (newPlan[`${day}-${block.id}`] && !validOptions.find(o => o.id === newPlan[`${day}-${block.id}`])) {
-               newPlan[`${day}-${block.id}`] = '';
-            }
-
-            // Auto-fill if exactly ONE option is available
-            if (validOptions.length === 1 && !newPlan[`${day}-${block.id}`]) {
-              newPlan[`${day}-${block.id}`] = validOptions[0].id;
-            }
-          });
+             currentBlocks.forEach(block => {
+               const validOptions = repository.filter(a => 
+                 block.allowedTypes.includes(a.category) && 
+                 currentEffectiveCount >= a.min && currentEffectiveCount <= a.max &&
+                 (a.focus === targetFocus || a.focus === 'Both')
+               );
+               
+               if (newPlans[program][`${day}-${block.id}`] && !validOptions.find(o => o.id === newPlans[program][`${day}-${block.id}`])) {
+                  newPlans[program][`${day}-${block.id}`] = '';
+               }
+               if (validOptions.length === 1 && !newPlans[program][`${day}-${block.id}`]) {
+                 newPlans[program][`${day}-${block.id}`] = validOptions[0].id;
+               }
+             });
+           });
         });
-        return newPlan;
-      }, [plans, activeProgram, repository, roster, holidays]);
+        return newPlans;
+      }, [plans, repository, roster, holidays]);
 
       useEffect(() => {
         setPlans(prev => {
-          const currentPlanStr = JSON.stringify(prev[activeProgram] || {});
+          const currentPlanStr = JSON.stringify(prev);
           const derivedPlanStr = JSON.stringify(derivedPlan);
           if (currentPlanStr !== derivedPlanStr) {
-             return { ...prev, [activeProgram]: derivedPlan };
+             return derivedPlan;
           }
           return prev;
         });
-      }, [derivedPlan, activeProgram]);
+      }, [derivedPlan]);
 
       const handleBookChange = (e) => {
         setSelectedBook(e.target.value);
         setSelectedUnit(1);
       };
 
-      const updatePlan = (day, blockId, activityId) => {
+      const updatePlan = (prog, day, blockId, activityId) => {
         setPlans(prev => ({
           ...prev,
-          [activeProgram]: { ...prev[activeProgram], [`${day}-${blockId}`]: activityId }
+          [prog]: { ...prev[prog], [`${day}-${blockId}`]: activityId }
         }));
       };
 
       const updateTarget = (field, value) => {
-        setTargets(prev => ({
-          ...prev,
-          [activeProgram]: { ...prev[activeProgram], [field]: value }
-        }));
+        const progs = activeProgram === 'both' ? ['fun', 'step'] : [activeProgram];
+        setTargets(prev => {
+          const next = { ...prev };
+          progs.forEach(p => {
+            next[p] = { ...next[p], [field]: value };
+          });
+          return next;
+        });
       };
 
       const generateSet = () => {
@@ -397,85 +487,92 @@
         const unitData = bookData.units.find(u => u.id === Number(selectedUnit));
         
         if(unitData) {
-          updateTarget('vocab', unitData.vocab);
-          updateTarget('sentences', unitData.sentences);
-          updateTarget('phonics', unitData.phonics);
-          // NEW: Save the book and unit label for the header
-          updateTarget('book', bookData.name);
-          updateTarget('unit', selectedBook === 'lb1' ? `Lesson ${unitData.id}` : `Unit ${unitData.id}`);
+          const progs = activeProgram === 'both' ? ['fun', 'step'] : [activeProgram];
+          setTargets(prev => {
+            const next = { ...prev };
+            progs.forEach(p => {
+              next[p] = {
+                vocab: unitData.vocab,
+                sentences: unitData.sentences,
+                phonics: unitData.phonics,
+                book: bookData.name,
+                unit: selectedBook === 'lb1' ? `Lesson ${unitData.id}` : `Unit ${unitData.id}`
+              };
+            });
+            return next;
+          });
           randomizeWeek(selectedBook, unitData.id);
         }
       };
 
       const randomizeWeek = (bookPref = null, unitPref = null) => {
-        let newPlan = {};
-        const currentBlocks = programConfig[activeProgram].blocks;
-        const targetUnitStr = bookPref && unitPref ? `${bookPref}-${unitPref}` : null;
-        const targetFocus = activeProgram === 'fun' ? 'Conversation' : 'Literacy';
+        let newPlans = { fun: { ...plans.fun }, step: { ...plans.step } };
+        const progsToUpdate = activeProgram === 'both' ? ['fun', 'step'] : [activeProgram];
+        
+        progsToUpdate.forEach(program => {
+            const currentBlocks = programConfig[program].blocks;
+            const targetUnitStr = bookPref && unitPref ? `${bookPref}-${unitPref}` : null;
+            const targetFocus = program === 'fun' ? 'Conversation' : 'Literacy';
 
-        // Global memory: Prevents duplicate games across the whole 5-day week
-        let usedCategoryIds = {}; 
-        categories.forEach(cat => usedCategoryIds[cat] = new Set());
+            let usedCategoryIds = {}; 
+            categories.forEach(cat => usedCategoryIds[cat] = new Set());
 
-        weekDays.forEach(day => {
-          if (isDayOff(day)) return;
-          
-          const rawCount = getStudentCount(day, activeProgram);
-          const currentEffectiveCount = rawCount <= 1 ? 2 : rawCount;
+            weekDays.forEach(day => {
+              if (isDayOff(day, program)) return;
+              
+              const rawCount = getStudentCount(day, program);
+              const currentEffectiveCount = rawCount <= 1 ? 2 : rawCount;
 
-          currentBlocks.forEach(block => {
-            // 1. Try unused activity matching the specific unit tag & exact focus
-            let available = repository.filter(a => 
-              block.allowedTypes.includes(a.category) && 
-              currentEffectiveCount >= a.min && currentEffectiveCount <= a.max &&
-              !usedCategoryIds[a.category].has(a.id) && 
-              (a.unit === targetUnitStr || a.unit === 'all') &&
-              (a.focus === targetFocus || a.focus === 'Both')
-            );
-            
-            // 2. Fallback: Unused activity from any unit, strict focus
-            if (available.length === 0) {
-              available = repository.filter(a => 
-                block.allowedTypes.includes(a.category) && 
-                currentEffectiveCount >= a.min && currentEffectiveCount <= a.max && 
-                !usedCategoryIds[a.category].has(a.id) &&
-                (a.focus === targetFocus || a.focus === 'Both')
-              );
-            }
+              currentBlocks.forEach(block => {
+                let available = repository.filter(a => 
+                  block.allowedTypes.includes(a.category) && 
+                  currentEffectiveCount >= a.min && currentEffectiveCount <= a.max &&
+                  !usedCategoryIds[a.category].has(a.id) && 
+                  (a.unit === targetUnitStr || a.unit === 'all') &&
+                  (a.focus === targetFocus || a.focus === 'Both')
+                );
+                
+                if (available.length === 0) {
+                  available = repository.filter(a => 
+                    block.allowedTypes.includes(a.category) && 
+                    currentEffectiveCount >= a.min && currentEffectiveCount <= a.max && 
+                    !usedCategoryIds[a.category].has(a.id) &&
+                    (a.focus === targetFocus || a.focus === 'Both')
+                  );
+                }
 
-            // 3. Fallback: Allow duplicates, strict focus
-            if (available.length === 0) {
-              available = repository.filter(a => 
-                block.allowedTypes.includes(a.category) && 
-                currentEffectiveCount >= a.min && currentEffectiveCount <= a.max &&
-                (a.focus === targetFocus || a.focus === 'Both')
-              );
-            }
+                if (available.length === 0) {
+                  available = repository.filter(a => 
+                    block.allowedTypes.includes(a.category) && 
+                    currentEffectiveCount >= a.min && currentEffectiveCount <= a.max &&
+                    (a.focus === targetFocus || a.focus === 'Both')
+                  );
+                }
 
-            // 4. Last Resort: Ignore focus if repository is exhausted
-            if (available.length === 0) {
-              available = repository.filter(a => 
-                block.allowedTypes.includes(a.category) && 
-                currentEffectiveCount >= a.min && currentEffectiveCount <= a.max
-              );
-            }
+                if (available.length === 0) {
+                  available = repository.filter(a => 
+                    block.allowedTypes.includes(a.category) && 
+                    currentEffectiveCount >= a.min && currentEffectiveCount <= a.max
+                  );
+                }
 
-            if (available.length > 0) {
-              const picked = available[Math.floor(Math.random() * available.length)];
-              newPlan[`${day}-${block.id}`] = picked.id;
-              usedCategoryIds[picked.category].add(picked.id);
-            } else {
-              newPlan[`${day}-${block.id}`] = ''; 
-            }
-          });
+                if (available.length > 0) {
+                  const picked = available[Math.floor(Math.random() * available.length)];
+                  newPlans[program][`${day}-${block.id}`] = picked.id;
+                  usedCategoryIds[picked.category].add(picked.id);
+                } else {
+                  newPlans[program][`${day}-${block.id}`] = ''; 
+                }
+              });
+            });
         });
 
-        setPlans(prev => ({ ...prev, [activeProgram]: newPlan }));
+        setPlans(newPlans);
       };
 
-      const openQuickAddModal = (categoryPref) => {
-        const targetFocus = activeProgram === 'fun' ? 'Conversation' : 'Literacy';
-        const rawCount = getStudentCount(activeDay, activeProgram);
+      const openQuickAddModal = (prog, categoryPref) => {
+        const targetFocus = prog === 'fun' ? 'Conversation' : 'Literacy';
+        const rawCount = getStudentCount(activeDay, prog);
         const currentCount = rawCount === 0 ? 1 : rawCount;
         setNewAct({ 
           name: '', category: categoryPref, focus: targetFocus, min: 1, max: currentCount > 12 ? 12 : currentCount, 
@@ -556,130 +653,93 @@
         );
       }, [repository, searchQuery]);
 
-      const insightsByDay = useMemo(() => {
-        const result = {};
-        weekDays.forEach(day => {
-          result[day] = { materials: [], goals: [] };
-          
-          if (isDayOff(day)) {
-            result[day].isHoliday = true;
-            return;
-          }
-
-          programConfig[activeProgram].blocks.forEach(block => {
-            const actId = derivedPlan[`${day}-${block.id}`];
-            const act = repository.find(a => a.id === actId);
-            
-            if (act) {
-              if (act.materials && act.materials.trim() !== '' && act.materials.toLowerCase() !== 'none') {
-                result[day].materials.push({ name: act.name, text: formatDescription(act.materials.trim(), targets[activeProgram]) });
-              }
-              if (act.goal && act.goal.trim() !== '') {
-                result[day].goals.push({ name: act.name, text: act.goal.trim() });
-              }
-            }
-          });
-          
-          const uniqueMats = [];
-          const matKeys = new Set();
-          result[day].materials.forEach(m => {
-            const key = `${m.name}:${m.text}`;
-            if(!matKeys.has(key)) { matKeys.add(key); uniqueMats.push(m); }
-          });
-          result[day].materials = uniqueMats;
-
-          const uniqueGoals = [];
-          const goalKeys = new Set();
-          result[day].goals.forEach(g => {
-            const key = `${g.name}:${g.text}`;
-            if(!goalKeys.has(key)) { goalKeys.add(key); uniqueGoals.push(g); }
-          });
-          result[day].goals = uniqueGoals;
-        });
-        
-        return result;
-      }, [derivedPlan, repository, activeProgram, holidays, targets, roster]);
-
       const exportToExcel = () => {
-        const currentBlocks = programConfig[activeProgram].blocks;
-        const currentTargets = targets[activeProgram];
-        
-        const planData = [];
-        planData.push([`${programConfig[activeProgram].name} - Lesson Plan`]);
-        
-        if (currentTargets.book && currentTargets.unit) {
-          planData.push(['Reference Material', `${currentTargets.book} - ${currentTargets.unit}`]);
-        }
-        
-        planData.push(['Target Vocabulary', currentTargets.vocab]);
-        planData.push(['Target Sentences', currentTargets.sentences]);
-        planData.push(['Target Phonics', currentTargets.phonics]);
-        planData.push([]);
-        
-        const activeWeekDays = weekDays.filter(day => !isDayOff(day));
-        
-        planData.push(['Block Focus', ...activeWeekDays]);
-        
-        currentBlocks.forEach(block => {
-          const row = [block.label];
-          activeWeekDays.forEach(day => {
-             const actId = derivedPlan[`${day}-${block.id}`];
-             const activity = repository.find(a => a.id === actId);
-             
-             let cellText = activity ? activity.name : '';
-             if (activity && activity.description) {
-               cellText += `\n\n[Mechanics]\n${formatDescription(activity.description, currentTargets)}`;
-             }
-             row.push(cellText);
-          });
-          planData.push(row);
-        });
-
-        // Retain the insights data for the second Excel sheet
-        const insightsData = [];
-        insightsData.push([`${programConfig[activeProgram].name} - Daily Insights`]);
-        insightsData.push([]);
-        
-        activeWeekDays.forEach(day => {
-          insightsData.push([`--- ${day} ---`]);
-          const mats = [];
-          const goals = [];
-          currentBlocks.forEach(block => {
-            const actId = derivedPlan[`${day}-${block.id}`];
-            const act = repository.find(a => a.id === actId);
-            if (act) {
-              if (act.materials && act.materials.trim() !== '' && act.materials.toLowerCase() !== 'none') {
-                mats.push(`${act.name}: ${formatDescription(act.materials.trim(), currentTargets)}`);
-              }
-              if (act.goal && act.goal.trim() !== '') {
-                goals.push(`${act.name}: ${act.goal.trim()}`);
-              }
-            }
-          });
-          insightsData.push(['Goals', goals.length > 0 ? goals.join('\n') : 'None']);
-          insightsData.push(['Materials', mats.length > 0 ? mats.join('\n') : 'None']);
-          insightsData.push([]);
-        });
-
         const wb = XLSX.utils.book_new();
-        const wsPlan = XLSX.utils.aoa_to_sheet(planData);
-        const wsInsights = XLSX.utils.aoa_to_sheet(insightsData);
-        
-        XLSX.utils.book_append_sheet(wb, wsPlan, 'Weekly Plan');
-        XLSX.utils.book_append_sheet(wb, wsInsights, 'Materials & Goals');
-        
-        XLSX.writeFile(wb, `ABC_Plan_${activeProgram}.xlsx`);
+
+        ['fun', 'step'].forEach(program => {
+            const currentBlocks = programConfig[program].blocks;
+            const progTargets = targets[program];
+            
+            const planData = [];
+            planData.push([`${programConfig[program].name} - Lesson Plan`]);
+            
+            if (progTargets.book && progTargets.unit) {
+              planData.push(['Reference Material', `${progTargets.book} - ${progTargets.unit}`]);
+            }
+            
+            planData.push(['Target Vocabulary', progTargets.vocab]);
+            planData.push(['Target Sentences', progTargets.sentences]);
+            planData.push(['Target Phonics', progTargets.phonics]);
+            planData.push([]);
+            
+            const activeWeekDays = weekDays.filter(day => !isDayOff(day, program));
+            if (activeWeekDays.length === 0) return; // Skip sheets with no active days
+            
+            planData.push(['Block Focus', ...activeWeekDays]);
+            
+            currentBlocks.forEach(block => {
+              const row = [block.label];
+              activeWeekDays.forEach(day => {
+                 const actId = derivedPlan[program][`${day}-${block.id}`];
+                 const activity = repository.find(a => a.id === actId);
+                 
+                 let cellText = activity ? activity.name : '';
+                 if (activity && activity.description) {
+                   cellText += `\n\n[Mechanics]\n${formatDescription(activity.description, progTargets)}`;
+                 }
+                 row.push(cellText);
+              });
+              planData.push(row);
+            });
+
+            // Retain the insights data for the second Excel sheet
+            const insightsData = [];
+            insightsData.push([`${programConfig[program].name} - Daily Insights`]);
+            insightsData.push([]);
+            
+            activeWeekDays.forEach(day => {
+              insightsData.push([`--- ${day} ---`]);
+              const mats = [];
+              const goals = [];
+              currentBlocks.forEach(block => {
+                const actId = derivedPlan[program][`${day}-${block.id}`];
+                const act = repository.find(a => a.id === actId);
+                if (act) {
+                  if (act.materials && act.materials.trim() !== '' && act.materials.toLowerCase() !== 'none') {
+                    mats.push(`${act.name}: ${formatDescription(act.materials.trim(), progTargets)}`);
+                  }
+                  if (act.goal && act.goal.trim() !== '') {
+                    goals.push(`${act.name}: ${act.goal.trim()}`);
+                  }
+                }
+              });
+              insightsData.push(['Goals', goals.length > 0 ? goals.join('\n') : 'None']);
+              insightsData.push(['Materials', mats.length > 0 ? mats.join('\n') : 'None']);
+              insightsData.push([]);
+            });
+
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(planData), `${programConfig[program].name} Plan`);
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(insightsData), `${programConfig[program].name} Goals`);
+        });
+
+        if (wb.SheetNames.length > 0) {
+            XLSX.writeFile(wb, `ABC_Weekly_Plan.xlsx`);
+        } else {
+            alert("No active classes to export.");
+        }
       };
 
-      const config = programConfig[activeProgram];
-      const currentTargets = targets[activeProgram];
+      const activeProgramsList = activeProgram === 'both' ? ['fun', 'step'] : [activeProgram];
+      const currentTargets = activeProgram === 'both' ? targets.fun : targets[activeProgram];
       const targetFocus = activeProgram === 'fun' ? 'Conversation' : 'Literacy';
 
       // Helps us identify duplicate activities in the current plan for the dropdown warnings
-      const currentPlanValues = Object.values(derivedPlan).filter(val => val !== '');
+      const currentPlanValues = activeProgramsList.flatMap(prog => 
+        Object.values(derivedPlan[prog]).filter(val => val !== '')
+      );
       const usedActivityIds = new Set(currentPlanValues);
       
-      const printableDays = weekDays.filter(day => !isDayOff(day));
+      const printableDays = weekDays.filter(day => !holidays[day]); // Just filters manual holidays
 
       return (
         <div className="min-h-screen print:min-h-0 p-4 sm:p-8 print:p-0 relative">
@@ -697,49 +757,55 @@
           </div>
 
           {activeTab === 'attendance' && (
-            <div className="max-w-7xl mx-auto space-y-6 no-print">
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg no-print">
                 <p className="text-blue-800 text-sm">
                   <strong>Master Attendance Roster:</strong> The students and schedules you enter here will automatically update the "Daily Settings" student counts on your Weekly Planner. 
                   When you print your lesson plan, each day's specific roster will automatically print on the back!
                 </p>
               </div>
-              <div className="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden">
-                 <div className="p-4 sm:p-6 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden print:shadow-none print:border-none">
+                 <div className="p-4 sm:p-6 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
                    <h2 className="text-xl font-bold text-gray-800">Student Roster & Weekly Schedule</h2>
                    <div className="flex flex-wrap items-center gap-2">
                       <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md text-sm font-bold hover:bg-indigo-100 transition-colors cursor-pointer shadow-sm">
-                        <UploadIcon className="w-4 h-4" />
+                        <DownloadIcon className="w-4 h-4" />
                         Import
                         <input type="file" accept=".json" onChange={handleImportRoster} className="hidden" />
                       </label>
                       <button onClick={handleExportRoster} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md text-sm font-bold hover:bg-indigo-100 transition-colors shadow-sm">
-                        <DownloadIcon className="w-4 h-4" />
+                        <UploadIcon className="w-4 h-4" />
                         Export
                       </button>
-                      <button onClick={addStudentToRoster} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700 shadow-sm transition-colors">
-                        <UserPlusIcon className="w-4 h-4"/> Add Student
+                      <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700 shadow-sm transition-colors ml-2">
+                        <PrinterIcon className="w-4 h-4"/> Print Roster
                       </button>
                    </div>
                  </div>
+                 
+                 {/* Print Header for Master Roster */}
+                 <div className="hidden print:block p-4 border-b-2 border-black">
+                    <h1 className="text-2xl font-black text-black">Master Class Roster & Weekly Schedule</h1>
+                 </div>
+
                  <div className="overflow-x-auto">
                    <table className="w-full text-left border-collapse">
                      <thead>
-                       <tr className="bg-gray-100">
-                         <th className="p-4 border-b border-gray-200 text-sm font-bold text-gray-700 w-48">Student Name</th>
-                         {weekDays.map(day => <th key={day} className="p-4 border-b border-gray-200 text-sm font-bold text-gray-700 text-center min-w-[120px]">{day}</th>)}
-                         <th className="p-4 border-b border-gray-200 text-sm font-bold text-gray-700 w-16 text-center">Actions</th>
+                       <tr className="bg-gray-100 print:bg-white">
+                         <th className="p-4 print:p-2 border-b border-gray-200 print:border-black text-sm print:text-xs font-bold text-gray-700 print-text-black w-48">Student Name</th>
+                         {weekDays.map(day => <th key={day} className="p-4 print:p-2 border-b border-gray-200 print:border-black text-sm print:text-xs font-bold text-gray-700 print-text-black text-center min-w-[120px] print:min-w-[60px]">{day}</th>)}
+                         <th className="p-4 border-b border-gray-200 text-sm font-bold text-gray-700 w-16 text-center no-print">Actions</th>
                        </tr>
                      </thead>
                      <tbody>
                        {roster.map(student => (
-                          <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                             <td className="p-2">
-                               <input type="text" value={student.name} onChange={e => updateStudentName(student.id, e.target.value)} placeholder="Student Name" className="w-full p-2.5 border border-gray-300 rounded outline-none focus:ring-2 focus:ring-blue-500 font-medium" />
+                          <tr key={student.id} className="border-b border-gray-100 print:border-black hover:bg-gray-50 transition-colors">
+                             <td className="p-2 print:p-2 print:border-r print:border-black">
+                               <input type="text" value={student.name} onChange={e => updateStudentName(student.id, e.target.value)} placeholder="Student Name" className="w-full p-2.5 print:p-1 border border-gray-300 print:border-none rounded outline-none focus:ring-2 focus:ring-blue-500 font-medium print-text-black" />
                              </td>
                              {weekDays.map(day => (
-                               <td key={day} className="p-2 text-center">
-                                 <select value={student.schedule[day]} onChange={e => updateStudentSchedule(student.id, day, e.target.value)} className={`w-full p-2.5 border rounded text-sm outline-none focus:ring-2 focus:ring-blue-500 font-bold transition-colors ${student.schedule[day] === 'None' ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-blue-300 text-blue-700 shadow-sm'}`}>
+                               <td key={day} className="p-2 print:p-2 text-center print:border-r print:border-black">
+                                 <select value={student.schedule[day]} onChange={e => updateStudentSchedule(student.id, day, e.target.value)} className={`w-full p-2.5 print:p-1 border print:border-none rounded text-sm outline-none focus:ring-2 focus:ring-blue-500 font-bold transition-colors print-text-black ${student.schedule[day] === 'None' ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-blue-300 text-blue-700 shadow-sm'}`}>
                                    <option value="None">- Off -</option>
                                    <option value="fun">Fun English</option>
                                    <option value="step">Step English</option>
@@ -747,7 +813,7 @@
                                  </select>
                                </td>
                              ))}
-                             <td className="p-2 text-center">
+                             <td className="p-2 text-center no-print">
                                <button onClick={() => removeStudentFromRoster(student.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Delete Student">
                                  <Trash2Icon className="w-5 h-5 mx-auto"/>
                                </button>
@@ -757,6 +823,12 @@
                      </tbody>
                    </table>
                    {roster.length === 0 && <div className="p-12 text-center text-gray-500 font-medium">No students added to the roster yet.</div>}
+                 </div>
+                 <div className="p-4 border-t border-gray-200 bg-white no-print">
+                   <button onClick={addStudentToRoster} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium px-2 py-1 rounded-md hover:bg-blue-50 transition-colors">
+                     <UserPlusIcon className="w-4 h-4" />
+                     生徒を追加 (Add Student Row)
+                   </button>
                  </div>
               </div>
             </div>
@@ -769,56 +841,84 @@
               {/* ======================= */}
               <div className="block print:hidden space-y-6 max-w-7xl mx-auto">
                 
-                {/* Header & Targets */}
+                {/* Header & Calendar Setup */}
                 <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
-                  <div className="p-4 sm:p-6 border-b-2 border-gray-300 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white">
-                    <div className="flex bg-gray-100 p-1 rounded-lg w-full lg:w-auto">
-                      <button onClick={() => setActiveProgram('fun')} className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'fun' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Fun English</button>
-                      <button onClick={() => setActiveProgram('step')} className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeProgram === 'step' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Step English</button>
+                  
+                  {/* Program Toggle */}
+                  <div className="p-4 border-b-2 border-gray-300 bg-gray-100 flex justify-center">
+                    <div className="flex bg-white p-1.5 rounded-xl shadow-sm border border-gray-300 w-full max-w-lg">
+                      <button onClick={() => setActiveProgram('both')} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${activeProgram === 'both' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>Both</button>
+                      <button onClick={() => setActiveProgram('fun')} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${activeProgram === 'fun' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>Fun English</button>
+                      <button onClick={() => setActiveProgram('step')} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${activeProgram === 'step' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>Step English</button>
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 p-4 sm:p-6 border-b-2 border-blue-200 shadow-inner flex flex-col md:flex-row items-end md:items-center gap-4">
-                    <div className="flex items-center gap-2 text-blue-800 font-bold whitespace-nowrap">
-                      <ZapIcon className="w-5 h-5 fill-blue-600 text-blue-600"/> Quick Gen Set:
+                  {/* Calendar Setup & Quick Gen */}
+                  <div className="bg-blue-50 p-4 sm:p-6 border-b-2 border-blue-200 shadow-inner flex flex-col lg:flex-row items-end lg:items-center gap-6 justify-between">
+                    
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 text-blue-800 font-bold whitespace-nowrap mr-2">
+                        <CalendarIcon className="w-5 h-5" /> Schedule:
+                      </div>
+                      <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-blue-200 shadow-sm">
+                        <select value={calYear} onChange={e => setCalYear(Number(e.target.value))} className="font-bold text-gray-800 outline-none bg-transparent">
+                          <option value={currentYear}>{currentYear}</option>
+                          <option value={currentYear + 1}>{currentYear + 1}</option>
+                        </select>
+                        <span className="text-gray-300">/</span>
+                        <select value={calMonth} onChange={e => setCalMonth(Number(e.target.value))} className="font-bold text-gray-800 outline-none bg-transparent">
+                          {monthNames.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                        </select>
+                        <span className="text-gray-300">/</span>
+                        <select value={calWeek} onChange={e => setCalWeek(Number(e.target.value))} className="font-bold text-gray-800 outline-none bg-transparent text-sm">
+                          {weeks.map((w, i) => <option key={i} value={i}>Wk {i+1}: {w.label}</option>)}
+                        </select>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-1 w-full">
-                      <BookIcon className="w-5 h-5 text-gray-400" />
-                      <select value={selectedBook} onChange={handleBookChange} className="p-2 border rounded-md text-sm bg-white font-medium flex-1 md:flex-none">
-                        {Object.entries(curriculumSets).map(([key, data]) => (
-                          <option key={key} value={key}>{data.name}</option>
-                        ))}
-                      </select>
-                      <select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="p-2 border rounded-md text-sm bg-white font-medium">
-                        {curriculumSets[selectedBook].units.map(u => (
-                          <option key={u.id} value={u.id}>{selectedBook === 'lb1' ? `Lesson ${u.id}` : `Unit ${u.id}`}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex gap-2 w-full md:w-auto">
-                      <button onClick={generateSet} className="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm font-bold whitespace-nowrap">
-                        Generate Target & Week
+
+                    <div className="flex items-center gap-3 flex-wrap w-full lg:w-auto">
+                      <div className="flex items-center gap-2 text-blue-800 font-bold whitespace-nowrap">
+                        <ZapIcon className="w-5 h-5 fill-blue-600 text-blue-600"/> Lesson Gen:
+                      </div>
+                      <div className="flex items-center gap-2 flex-1 lg:flex-none bg-white px-3 py-2 rounded-lg border border-blue-200 shadow-sm">
+                        <BookIcon className="w-5 h-5 text-gray-400" />
+                        <select value={selectedBook} onChange={handleBookChange} className="font-bold text-gray-800 outline-none bg-transparent text-sm max-w-[140px]">
+                          {Object.entries(curriculumSets).map(([key, data]) => (
+                            <option key={key} value={key}>{data.name}</option>
+                          ))}
+                        </select>
+                        <select value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)} className="font-bold text-gray-800 outline-none bg-transparent text-sm">
+                          {curriculumSets[selectedBook].units.map(u => (
+                            <option key={u.id} value={u.id}>{selectedBook === 'lb1' ? `Lesson ${u.id}` : `Unit ${u.id}`}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <button onClick={generateSet} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm font-bold whitespace-nowrap">
+                        Fill Targets
                       </button>
                       <button onClick={() => randomizeWeek()} className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm text-sm font-bold" title="Shuffle week without changing targets">
                         <ShuffleIcon className="w-4 h-4" /> Randomize
                       </button>
                     </div>
+
                   </div>
 
                   {/* Daily Schedule & Students Bar */}
-                  <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 px-6 py-4 border-b-2 border-gray-300 bg-white">
-                     <div className="text-sm font-bold text-blue-800 flex items-center gap-2 whitespace-nowrap">
-                       <CalendarIcon className="w-5 h-5" /> Daily Settings:
+                  <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 px-6 py-5 border-b-2 border-gray-300 bg-white">
+                     <div className="text-sm font-bold text-blue-800 flex items-center gap-2 whitespace-nowrap mr-2">
+                       <CalendarIcon className="w-5 h-5" /> Settings:
                      </div>
-                     <div className="flex gap-3 overflow-x-auto w-full pb-2 lg:pb-0 scrollbar-hide">
+                     <div className="flex gap-4 overflow-x-auto w-full pb-2 lg:pb-0 scrollbar-hide">
                        {weekDays.map(day => {
                          const rawCount = getStudentCount(day, activeProgram);
-                         const dayOff = isDayOff(day);
+                         const dayOff = isDayOff(day, activeProgram);
                          
                          return (
-                           <div key={day} className={`flex flex-col gap-2 p-2.5 rounded-lg border w-40 shrink-0 transition-colors ${dayOff ? 'bg-gray-100 border-gray-200' : 'bg-blue-50 border-blue-200 shadow-sm'}`}>
+                           <div key={day} className={`flex flex-col gap-2 p-3 rounded-xl border w-48 shrink-0 transition-colors ${dayOff ? 'bg-gray-100 border-gray-200' : 'bg-blue-50 border-blue-200 shadow-sm'}`}>
                              <div className="flex justify-between items-center">
-                               <span className={`text-sm font-bold ${dayOff ? 'text-gray-400' : 'text-gray-800'}`}>{day}</span>
+                               <span className={`text-sm font-bold ${dayOff ? 'text-gray-400' : 'text-gray-800'}`}>
+                                 {day} <span className="text-xs font-medium ml-1">({displayShortDate(currentWeekDates[day])})</span>
+                               </span>
                                <label className="flex items-center gap-1 cursor-pointer">
                                  <input 
                                    type="checkbox" 
@@ -831,7 +931,7 @@
                                </label>
                              </div>
                              {!dayOff ? (
-                               <div className="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-blue-100">
+                               <div className="flex items-center justify-between bg-white px-2 py-1.5 rounded-lg border border-blue-100">
                                  <div className="flex items-center gap-1 text-gray-500">
                                    <UsersIcon className="w-3.5 h-3.5" />
                                    <span className="text-[10px] font-bold uppercase">Students</span>
@@ -839,7 +939,7 @@
                                  <span className="text-sm font-black text-blue-700 pr-1">{rawCount}</span>
                                </div>
                              ) : (
-                                <div className="flex items-center justify-center bg-gray-200/50 px-2 py-1.5 rounded border border-gray-200 text-[11px] font-bold text-gray-400">
+                                <div className="flex items-center justify-center bg-gray-200/50 px-2 py-1.5 rounded-lg border border-gray-200 text-[11px] font-bold text-gray-400 h-[34px]">
                                   No Class
                                 </div>
                              )}
@@ -849,6 +949,7 @@
                      </div>
                   </div>
 
+                  {/* Targets */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-6">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Target Vocabulary</label>
@@ -869,20 +970,23 @@
                 <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-sm">
                   <div className="flex border-b-2 border-gray-300 bg-gray-100">
                     {weekDays.map(day => {
-                      const dayOff = isDayOff(day);
+                      const dayOff = isDayOff(day, activeProgram);
                       return (
                         <button
                           key={day}
                           onClick={() => setActiveDay(day)}
-                          className={`flex-1 py-4 text-center font-black text-sm sm:text-base transition-colors ${
+                          className={`flex-1 py-4 flex flex-col items-center justify-center transition-colors border-b-4 ${
                             activeDay === day
-                              ? 'bg-white text-blue-700 border-b-4 border-blue-600'
+                              ? 'bg-white text-blue-700 border-blue-600'
                               : dayOff 
-                                ? 'text-gray-400 hover:bg-gray-200 border-b-4 border-transparent'
-                                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200 border-b-4 border-transparent'
+                                ? 'text-gray-400 hover:bg-gray-200 border-transparent'
+                                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200 border-transparent'
                           }`}
                         >
-                          {day} {dayOff && <span className="text-[10px] block font-normal">(No Class)</span>}
+                          <span className="font-black text-sm sm:text-base">{day}</span>
+                          <span className={`text-[10px] font-bold ${activeDay === day ? 'text-blue-400' : 'text-gray-400'}`}>
+                             {dayOff ? '(No Class)' : displayShortDate(currentWeekDates[day])}
+                          </span>
                         </button>
                       );
                     })}
@@ -892,106 +996,123 @@
                     <div className="p-4 sm:p-6 space-y-4">
                       <div className="flex justify-between items-center border-b pb-2 mb-4">
                         <h2 className="font-black text-xl text-gray-800 flex items-center gap-2">
-                          {activeDay} (Activity Blocks)
+                          {activeDay} <span className="text-gray-400 text-lg font-medium">({displayShortDate(currentWeekDates[activeDay])})</span>
                         </h2>
                         <div className="flex gap-2">
-                          <button onClick={exportToExcel} className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"><DownloadIcon className="w-4 h-4"/> Export to Excel</button>
-                          <button onClick={() => window.print()} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"><PrinterIcon className="w-4 h-4"/> Print</button>
+                          <button onClick={exportToExcel} className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"><DownloadIcon className="w-4 h-4"/> Export Excel</button>
+                          <button onClick={() => window.print()} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"><PrinterIcon className="w-4 h-4"/> Print Dual Weekly Plan</button>
                         </div>
                       </div>
 
-                      {isDayOff(activeDay) ? (
+                      {isDayOff(activeDay, activeProgram) ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
                           <PalmtreeIcon className="w-12 h-12 text-gray-300 mb-3" />
                           <h3 className="text-xl font-bold text-gray-500">No Class</h3>
-                          <p className="text-gray-400 mt-2 font-medium">No lessons scheduled for this day.</p>
+                          <p className="text-gray-400 mt-2 font-medium">No lessons scheduled for {activeProgram === 'both' ? 'either program' : 'this program'} today.</p>
                           <p className="text-xs text-gray-400 mt-1">To enable scheduling, add students to the roster or uncheck the holiday toggle.</p>
                         </div>
                       ) : (
-                        config.blocks.map(block => {
-                          const rawCount = getStudentCount(activeDay, activeProgram);
+                        activeProgramsList.map((prog) => {
+                          if (isDayOff(activeDay, prog)) return null; // Only render blocks for the programs that are actually active today
+                          
+                          const progConfig = programConfig[prog];
+                          const progTargets = targets[prog];
+                          const progFocus = prog === 'fun' ? 'Conversation' : 'Literacy';
+                          const rawCount = getStudentCount(activeDay, prog);
                           const currentEffectiveCount = rawCount <= 1 ? 2 : rawCount;
 
-                          const validOptions = repository.filter(a => 
-                            block.allowedTypes.includes(a.category) && 
-                            currentEffectiveCount >= a.min && currentEffectiveCount <= a.max &&
-                            (a.focus === targetFocus || a.focus === 'Both')
-                          );
-                          
-                          const isMissing = validOptions.length === 0;
-                          const isSingle = validOptions.length === 1;
-                          const selectedActId = derivedPlan[`${activeDay}-${block.id}`];
-                          const selectedAct = repository.find(a => a.id === selectedActId);
-
                           return (
-                            <div key={block.id} className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start">
-                              <div className="w-full md:w-1/3">
-                                <h3 className="font-bold text-gray-800 text-lg">{block.label}</h3>
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                  {block.allowedTypes.map(type => (
-                                    <span key={type} className="text-[10px] uppercase font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{type}</span>
-                                  ))}
-                                </div>
-                              </div>
-                              
-                              <div className="w-full md:w-2/3 flex flex-col gap-3">
-                                <select
-                                  value={selectedActId || ''}
-                                  onChange={(e) => updatePlan(activeDay, block.id, e.target.value)}
-                                  disabled={isSingle}
-                                  className={`w-full p-3 rounded-lg border text-sm font-bold outline-none shadow-sm transition-all
-                                    ${isMissing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-gray-300 focus:ring-2 focus:ring-blue-500'}
-                                    ${isSingle ? 'opacity-100 bg-gray-200 border-gray-400 text-gray-800 cursor-not-allowed' : 'text-gray-900'}
-                                  `}
-                                >
-                                  <option value="">-- Select Activity --</option>
-                                  {validOptions.map(act => {
-                                    const isUsedElsewhere = usedActivityIds.has(act.id) && selectedActId !== act.id;
-                                    return (
-                                      <option key={act.id} value={act.id}>
-                                        {act.name} {isUsedElsewhere ? '(Used this week)' : ''}
-                                      </option>
-                                    );
-                                  })}
-                                </select>
+                            <div key={prog} className="mb-10 last:mb-0">
+                               {activeProgram === 'both' && (
+                                 <h3 className="font-black text-xl text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">{progConfig.name}</h3>
+                               )}
+                               
+                               <div className="space-y-4">
+                                 {progConfig.blocks.map(block => {
+                                   const validOptions = repository.filter(a => 
+                                     block.allowedTypes.includes(a.category) && 
+                                     currentEffectiveCount >= a.min && currentEffectiveCount <= a.max &&
+                                     (a.focus === progFocus || a.focus === 'Both')
+                                   );
+                                   
+                                   const isMissing = validOptions.length === 0;
+                                   const isSingle = validOptions.length === 1;
+                                   const selectedActId = derivedPlan[prog][`${activeDay}-${block.id}`];
+                                   const selectedAct = repository.find(a => a.id === selectedActId);
 
-                                {/* Inline Goals, Materials, and Description */}
-                                {selectedAct && (
-                                  <div className="flex flex-col gap-1.5 mt-1">
-                                    <div className="flex gap-1.5">
-                                      <div className="flex-1 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm flex flex-col gap-1 justify-start">
-                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Goal</div>
-                                        <div className="text-sm text-gray-800 font-medium leading-snug">{selectedAct.goal || 'None'}</div>
-                                      </div>
-                                      <div className="flex-1 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm flex flex-col gap-1 justify-start">
-                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Materials</div>
-                                        <div className="text-sm text-gray-800 font-medium leading-snug">
-                                          {selectedAct.materials ? formatDescription(selectedAct.materials, currentTargets) : 'None'}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    {selectedAct.description && (
-                                      <div className="w-full bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm flex flex-col gap-1 justify-start">
-                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Description / Mechanics</div>
-                                        <div className="text-sm text-gray-800 font-medium leading-snug">
-                                          {formatDescription(selectedAct.description, currentTargets)}
-                                        </div>
-                                        {rawCount <= 1 && selectedAct.min >= 2 && (
-                                          <div className="text-xs text-orange-600 font-bold mt-1">
-                                            * Designed for 2+ students (Teacher acts as a student)
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                                   return (
+                                     <div key={block.id} className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start">
+                                       <div className="w-full md:w-1/3">
+                                         <h3 className="font-bold text-gray-800 text-lg">{block.label}</h3>
+                                         <div className="flex flex-wrap gap-1 mt-2">
+                                           {block.allowedTypes.map(type => (
+                                             <span key={type} className="text-[10px] uppercase font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{type}</span>
+                                           ))}
+                                         </div>
+                                       </div>
+                                       
+                                       <div className="w-full md:w-2/3 flex flex-col gap-3">
+                                         <select
+                                           value={selectedActId || ''}
+                                           onChange={(e) => updatePlan(prog, activeDay, block.id, e.target.value)}
+                                           disabled={isSingle}
+                                           className={`w-full p-3 rounded-lg border text-sm font-bold outline-none shadow-sm transition-all
+                                             ${isMissing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-gray-300 focus:ring-2 focus:ring-blue-500'}
+                                             ${isSingle ? 'opacity-100 bg-gray-200 border-gray-400 text-gray-800 cursor-not-allowed' : 'text-gray-900'}
+                                           `}
+                                         >
+                                           <option value="">-- Select Activity --</option>
+                                           {validOptions.map(act => {
+                                             const isUsedElsewhere = usedActivityIds.has(act.id) && selectedActId !== act.id;
+                                             return (
+                                               <option key={act.id} value={act.id}>
+                                                 {act.name} {isUsedElsewhere ? '(Used this week)' : ''}
+                                               </option>
+                                             );
+                                           })}
+                                         </select>
 
-                                {isMissing && (
-                                  <button onClick={() => openQuickAddModal(block.allowedTypes[0])} className="w-full flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
-                                    <PlusCircleIcon className="w-4 h-4" /> Quick Add Missing Activity
-                                  </button>
-                                )}
-                              </div>
+                                         {/* Inline Goals, Materials, and Description */}
+                                         {selectedAct && (
+                                           <div className="flex flex-col gap-1.5 mt-1">
+                                             <div className="flex gap-1.5">
+                                               <div className="flex-1 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm flex flex-col gap-1 justify-start">
+                                                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Goal</div>
+                                                 <div className="text-sm text-gray-800 font-medium leading-snug">{selectedAct.goal || 'None'}</div>
+                                               </div>
+                                               <div className="flex-1 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm flex flex-col gap-1 justify-start">
+                                                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Materials</div>
+                                                 <div className="text-sm text-gray-800 font-medium leading-snug">
+                                                   {selectedAct.materials ? formatDescription(selectedAct.materials, progTargets) : 'None'}
+                                                 </div>
+                                               </div>
+                                             </div>
+                                             {selectedAct.description && (
+                                               <div className="w-full bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm flex flex-col gap-1 justify-start">
+                                                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Description / Mechanics</div>
+                                                 <div className="text-sm text-gray-800 font-medium leading-snug">
+                                                   {formatDescription(selectedAct.description, progTargets)}
+                                                 </div>
+                                                 {rawCount <= 1 && selectedAct.min >= 2 && (
+                                                   <div className="text-xs text-orange-600 font-bold mt-1">
+                                                     * Designed for 2+ students (Teacher acts as a student)
+                                                   </div>
+                                                 )}
+                                               </div>
+                                             )}
+                                           </div>
+                                         )}
+
+                                         {isMissing && (
+                                           <button onClick={() => openQuickAddModal(prog, block.allowedTypes[0])} className="w-full flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+                                             <PlusCircleIcon className="w-4 h-4" /> Quick Add Missing Activity
+                                           </button>
+                                         )}
+                                       </div>
+                                     </div>
+                                   );
+                                 })}
+                               </div>
                             </div>
                           );
                         })
@@ -1002,173 +1123,183 @@
               </div>
 
               {/* ======================= */}
-              {/* PRINT VIEW (1 DAY/PAGE) */}
+              {/* DUAL PRINT VIEW (1 DAY/PAGE) */}
               {/* ======================= */}
               <div className="hidden print:block w-full">
                 {printableDays.length === 0 && (
                   <div className="print-text-black p-10 text-center text-xl font-bold">
-                    All days are marked as Holiday or have 0 students. Nothing to print.
+                    All days are marked as Holiday. Nothing to print.
                   </div>
                 )}
+                
                 {printableDays.map((day, dayIndex) => {
-                  return (
-                    <React.Fragment key={`print-group-${day}`}>
-                      {/* --- LESSON PLAN PAGE --- */}
-                      <div className="w-full print-break-after">
-                        {/* Header */}
-                        <div className="border-2 border-gray-500 print-border-2 rounded-xl mb-6 print:mb-2 bg-white overflow-hidden print-avoid-break">
-                          <div className="p-5 print:p-2 border-b-2 border-gray-500 print-border-b-2 flex justify-between items-center bg-white">
-                            <div>
-                              <h1 className="text-3xl print:text-lg font-black text-gray-800 print-text-black flex items-center">
-                                {day} <span className="text-xl print:text-sm font-bold text-gray-500 mx-2">|</span> ABC Garden • {config.name}
-                              </h1>
-                              <div className="flex items-center gap-3 print:gap-2 mt-2 print:mt-1">
-                                <p className="text-lg print:text-[11px] text-gray-600 font-bold print-text-black">{config.duration}</p>
-                                {currentTargets.book && currentTargets.unit && (
-                                  <>
-                                    <span className="text-gray-400 print:text-gray-500 font-bold print-text-black">|</span>
-                                    <p className="text-xl print:text-[11px] text-blue-800 print-text-black font-black">
-                                      {currentTargets.book} : {currentTargets.unit}
-                                    </p>
-                                  </>
-                                )}
+                  return ['fun', 'step'].map((prog) => {
+                    if (isDayOff(day, prog)) return null; // Skip generating pages if 0 students/holiday for this specific program on this day
+                    
+                    const printConfig = programConfig[prog];
+                    const printTargets = targets[prog];
+                    const printPlan = derivedPlan[prog];
+                    
+                    return (
+                      <React.Fragment key={`print-${day}-${prog}`}>
+                        {/* --- LESSON PLAN PAGE --- */}
+                        <div className="w-full print-break-after">
+                          {/* Header */}
+                          <div className="border-2 border-gray-500 print-border-2 rounded-xl mb-6 print:mb-2 bg-white overflow-hidden print-avoid-break">
+                            <div className="p-5 print:p-2 border-b-2 border-gray-500 print-border-b-2 flex justify-between items-center bg-white">
+                              <div>
+                                <h1 className="text-3xl print:text-lg font-black text-gray-800 print-text-black flex items-center">
+                                  {day}, {formatDateForHeader(currentWeekDates[day])} <span className="text-xl print:text-sm font-bold text-gray-500 mx-2">|</span> {printConfig.name}
+                                </h1>
+                                <div className="flex items-center gap-3 print:gap-2 mt-2 print:mt-1">
+                                  <p className="text-lg print:text-[11px] text-gray-600 font-bold print-text-black">{printConfig.duration}</p>
+                                  {printTargets.book && printTargets.unit && (
+                                    <>
+                                      <span className="text-gray-400 print:text-gray-500 font-bold print-text-black">|</span>
+                                      <p className="text-xl print:text-[11px] text-blue-800 print-text-black font-black">
+                                        {printTargets.book} : {printTargets.unit}
+                                      </p>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-6 print:gap-2 bg-gray-50 print-bg-gray p-5 print:p-2">
+                              <div>
+                                <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Vocabulary</label>
+                                <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{printTargets.vocab || '\u00A0'}</div>
+                              </div>
+                              <div>
+                                <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Sentences</label>
+                                <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{printTargets.sentences || '\u00A0'}</div>
+                              </div>
+                              <div>
+                                <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Phonics</label>
+                                <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{printTargets.phonics || '\u00A0'}</div>
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="grid grid-cols-3 gap-6 print:gap-2 bg-gray-50 print-bg-gray p-5 print:p-2">
-                            <div>
-                              <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Vocabulary</label>
-                              <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{currentTargets.vocab || '\u00A0'}</div>
-                            </div>
-                            <div>
-                              <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Sentences</label>
-                              <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{currentTargets.sentences || '\u00A0'}</div>
-                            </div>
-                            <div>
-                              <label className="block text-sm print:text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2 print:mb-0.5 print-text-black">Target Phonics</label>
-                              <div className="text-lg print:text-[11px] font-bold print-text-black break-words">{currentTargets.phonics || '\u00A0'}</div>
-                            </div>
+
+                          {/* Daily Blocks Table */}
+                          <div className="border-2 border-gray-500 print-border-2 rounded-xl overflow-hidden bg-white">
+                            <table className="w-full text-left border-collapse">
+                              <thead>
+                                <tr>
+                                  <th className="p-4 print:p-1.5 border-b-2 border-r-2 border-gray-500 print-border-b-2 print-border-r-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray w-1/4">Block Focus</th>
+                                  <th className="p-4 print:p-1.5 border-b-2 border-gray-500 print-border-b-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray">Activity & Mechanics</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {printConfig.blocks.map((block, index) => {
+                                  const rawCount = getStudentCount(day, prog);
+                                  const selectedActId = printPlan[`${day}-${block.id}`];
+                                  const selectedAct = repository.find(a => a.id === selectedActId);
+                                  const isLast = index === printConfig.blocks.length - 1;
+
+                                  return (
+                                    <tr key={block.id}>
+                                      <td className={`p-4 print:p-1.5 border-r-2 border-gray-500 print-border-r-2 bg-gray-50 print-bg-gray text-base print:text-[11px] font-bold text-gray-800 print-text-black align-top ${!isLast ? 'border-b-2 print-border-b-2' : ''}`}>
+                                        {block.label}
+                                      </td>
+                                      <td className={`p-4 print:p-1.5 align-top bg-white ${!isLast ? 'border-b-2 border-gray-500 print-border-b-2' : ''}`}>
+                                        
+                                        <div className="font-black text-xl print:text-[13px] text-black break-words mb-2 print:mb-1">
+                                          {selectedAct ? (
+                                            <>
+                                              {selectedAct.name}
+                                              {rawCount <= 1 && selectedAct.min >= 2 && (
+                                                <span className="text-sm print:text-[10px] text-gray-600 print-text-black font-bold ml-2 print:ml-1">
+                                                  (Teacher acts as a student)
+                                                </span>
+                                              )}
+                                            </>
+                                          ) : 'No activity selected'}
+                                        </div>
+                                        
+                                        {/* Inline Goals, Materials, and Description */}
+                                        {selectedAct && (
+                                          <div className="flex flex-col gap-1.5 print:gap-1.5 mt-1 print:mt-1">
+                                            <div className="flex gap-1.5 print:gap-1.5">
+                                              <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
+                                                <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Goal</div>
+                                                <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">{selectedAct.goal || 'None'}</div>
+                                              </div>
+                                              <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
+                                                <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Materials</div>
+                                                <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">
+                                                  {selectedAct.materials ? formatDescription(selectedAct.materials, printTargets) : 'None'}
+                                                </div>
+                                              </div>
+                                            </div>
+                                            {selectedAct.description && (
+                                              <div className="bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
+                                                <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Description / Mechanics</div>
+                                                <div className="text-base print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug whitespace-normal break-words">
+                                                  {formatDescription(selectedAct.description, printTargets)}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
 
-                        {/* Daily Blocks Table */}
-                        <div className="border-2 border-gray-500 print-border-2 rounded-xl overflow-hidden bg-white">
-                          <table className="w-full text-left border-collapse">
-                            <thead>
-                              <tr>
-                                <th className="p-4 print:p-1.5 border-b-2 border-r-2 border-gray-500 print-border-b-2 print-border-r-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray w-1/4">Block Focus</th>
-                                <th className="p-4 print:p-1.5 border-b-2 border-gray-500 print-border-b-2 font-black text-lg print:text-[11px] text-gray-800 bg-gray-100 print-bg-gray">Activity & Mechanics</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {config.blocks.map((block, index) => {
-                                const rawCount = getStudentCount(day, activeProgram);
-                                const selectedActId = derivedPlan[`${day}-${block.id}`];
-                                const selectedAct = repository.find(a => a.id === selectedActId);
-                                const isLast = index === config.blocks.length - 1;
+                        {/* --- ROSTER PAGE (Prints on the back) --- */}
+                        <div className={`w-full flex flex-col gap-6 print:gap-4 print:min-h-[260mm] mt-12 print:mt-0 print-break-after`}>
+                           <div className="border-2 border-gray-500 print-border-2 rounded-xl bg-white overflow-hidden print-avoid-break shrink-0">
+                              <div className="p-5 print:p-4 border-b-2 border-gray-500 print-border-b-2 flex justify-between items-center bg-gray-50 print-bg-gray">
+                                 <h1 className="text-3xl print:text-xl font-black text-gray-800 print-text-black flex items-center">
+                                   {day} Roster <span className="text-xl print:text-sm font-bold text-gray-500 mx-2">|</span> {printConfig.name}
+                                 </h1>
+                                 <h2 className="text-xl print:text-sm font-bold text-gray-600 print-text-black">{formatDateForHeader(currentWeekDates[day])}</h2>
+                              </div>
+                              <table className="w-full text-left border-collapse">
+                                 <thead>
+                                    <tr>
+                                       <th className="p-4 print:p-3 border-b-2 border-r-2 border-gray-500 print-border-b-2 print-border-r-2 font-black text-lg print:text-sm text-gray-800 bg-gray-100 print-bg-gray w-5/6">Student Name</th>
+                                       <th className="p-4 print:p-3 border-b-2 border-gray-500 print-border-b-2 font-black text-lg print:text-sm text-gray-800 bg-gray-100 print-bg-gray w-1/6 text-center">Attendance</th>
+                                    </tr>
+                                 </thead>
+                                 <tbody>
+                                    {roster.filter(s => s.schedule[day] === prog || s.schedule[day] === 'Both').map((student, i, arr) => (
+                                       <tr key={student.id}>
+                                          <td className={`p-4 print:p-3 border-r-2 border-gray-500 print-border-r-2 text-xl print:text-base font-bold text-gray-800 print-text-black ${i !== arr.length - 1 ? 'border-b-2 print-border-b-2' : ''}`}>
+                                            {student.name || `Student ${i + 1}`}
+                                          </td>
+                                          <td className={`p-4 print:p-3 ${i !== arr.length - 1 ? 'border-b-2 print-border-b-2' : ''}`}>
+                                             <div className="w-6 h-6 print:w-5 print:h-5 border-2 border-gray-400 print-border-2 mx-auto rounded-sm"></div>
+                                          </td>
+                                       </tr>
+                                    ))}
+                                    {roster.filter(s => s.schedule[day] === prog || s.schedule[day] === 'Both').length === 0 && (
+                                       <tr>
+                                          <td colSpan="2" className="p-8 print:p-6 text-center text-gray-500 font-bold text-xl print:text-base">No students scheduled for today.</td>
+                                       </tr>
+                                    )}
+                                 </tbody>
+                              </table>
+                           </div>
 
-                                return (
-                                  <tr key={block.id}>
-                                    <td className={`p-4 print:p-1.5 border-r-2 border-gray-500 print-border-r-2 bg-gray-50 print-bg-gray text-base print:text-[11px] font-bold text-gray-800 print-text-black align-top ${!isLast ? 'border-b-2 print-border-b-2' : ''}`}>
-                                      {block.label}
-                                    </td>
-                                    <td className={`p-4 print:p-1.5 align-top bg-white ${!isLast ? 'border-b-2 border-gray-500 print-border-b-2' : ''}`}>
-                                      
-                                      <div className="font-black text-xl print:text-[13px] text-black break-words mb-2 print:mb-1">
-                                        {selectedAct ? (
-                                          <>
-                                            {selectedAct.name}
-                                            {rawCount <= 1 && selectedAct.min >= 2 && (
-                                              <span className="text-sm print:text-[10px] text-gray-600 print-text-black font-bold ml-2 print:ml-1">
-                                                (Teacher acts as a student)
-                                              </span>
-                                            )}
-                                          </>
-                                        ) : 'No activity selected'}
-                                      </div>
-                                      
-                                      {/* Inline Goals, Materials, and Description */}
-                                      {selectedAct && (
-                                        <div className="flex flex-col gap-1.5 print:gap-1.5 mt-1 print:mt-1">
-                                          <div className="flex gap-1.5 print:gap-1.5">
-                                            <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
-                                              <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Goal</div>
-                                              <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">{selectedAct.goal || 'None'}</div>
-                                            </div>
-                                            <div className="flex-1 bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
-                                              <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Materials</div>
-                                              <div className="text-sm print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug">
-                                                {selectedAct.materials ? formatDescription(selectedAct.materials, currentTargets) : 'None'}
-                                              </div>
-                                            </div>
-                                          </div>
-                                          {selectedAct.description && (
-                                            <div className="bg-white print:bg-white p-2 print:p-1.5 rounded border border-gray-300 print-border-1 flex flex-col gap-1 print:gap-[3px] justify-start">
-                                              <div className="text-xs print:text-[8px] font-bold text-gray-500 print-text-black uppercase tracking-wider">Description / Mechanics</div>
-                                              <div className="text-base print:text-[9.5px] text-gray-800 print-text-black font-medium leading-snug whitespace-normal break-words">
-                                                {formatDescription(selectedAct.description, currentTargets)}
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
+                           {/* Notes Section (Giant White Space) */}
+                           <div className="border-2 border-gray-500 print-border-2 rounded-xl bg-white overflow-hidden flex-1 flex flex-col min-h-[200px] print:min-h-0">
+                              <div className="p-5 print:p-3 border-b-2 border-gray-500 print-border-b-2 flex items-center bg-gray-50 print-bg-gray shrink-0">
+                                 <h2 className="text-2xl print:text-base font-black text-gray-800 print-text-black">
+                                   Notes
+                                 </h2>
+                              </div>
+                              <div className="flex-1 w-full bg-white print:bg-white"></div>
+                           </div>
                         </div>
-                      </div>
-
-                      {/* --- ROSTER PAGE (Prints on the back) --- */}
-                      <div className={`w-full flex flex-col gap-6 print:gap-4 print:min-h-[260mm] mt-12 print:mt-0 ${dayIndex < printableDays.length - 1 ? 'print-break-after' : ''}`}>
-                         <div className="border-2 border-gray-500 print-border-2 rounded-xl bg-white overflow-hidden print-avoid-break shrink-0">
-                            <div className="p-5 print:p-4 border-b-2 border-gray-500 print-border-b-2 flex justify-between items-center bg-gray-50 print-bg-gray">
-                               <h1 className="text-3xl print:text-xl font-black text-gray-800 print-text-black flex items-center">
-                                 {day} Class Roster <span className="text-xl print:text-sm font-bold text-gray-500 mx-2">|</span> {config.name}
-                               </h1>
-                            </div>
-                            <table className="w-full text-left border-collapse">
-                               <thead>
-                                  <tr>
-                                     <th className="p-4 print:p-3 border-b-2 border-r-2 border-gray-500 print-border-b-2 print-border-r-2 font-black text-lg print:text-sm text-gray-800 bg-gray-100 print-bg-gray w-5/6">Student Name</th>
-                                     <th className="p-4 print:p-3 border-b-2 border-gray-500 print-border-b-2 font-black text-lg print:text-sm text-gray-800 bg-gray-100 print-bg-gray w-1/6 text-center">Attendance</th>
-                                  </tr>
-                               </thead>
-                               <tbody>
-                                  {roster.filter(s => s.schedule[day] === activeProgram || s.schedule[day] === 'Both').map((student, i, arr) => (
-                                     <tr key={student.id}>
-                                        <td className={`p-4 print:p-3 border-r-2 border-gray-500 print-border-r-2 text-xl print:text-base font-bold text-gray-800 print-text-black ${i !== arr.length - 1 ? 'border-b-2 print-border-b-2' : ''}`}>
-                                          {student.name || `Student ${i + 1}`}
-                                        </td>
-                                        <td className={`p-4 print:p-3 ${i !== arr.length - 1 ? 'border-b-2 print-border-b-2' : ''}`}>
-                                           <div className="w-6 h-6 print:w-5 print:h-5 border-2 border-gray-400 print-border-2 mx-auto rounded-sm"></div>
-                                        </td>
-                                     </tr>
-                                  ))}
-                                  {roster.filter(s => s.schedule[day] === activeProgram || s.schedule[day] === 'Both').length === 0 && (
-                                     <tr>
-                                        <td colSpan="2" className="p-8 print:p-6 text-center text-gray-500 font-bold text-xl print:text-base">No students scheduled for today.</td>
-                                     </tr>
-                                  )}
-                               </tbody>
-                            </table>
-                         </div>
-
-                         {/* Notes Section (Giant White Space) */}
-                         <div className="border-2 border-gray-500 print-border-2 rounded-xl bg-white overflow-hidden flex-1 flex flex-col min-h-[200px] print:min-h-0">
-                            <div className="p-5 print:p-3 border-b-2 border-gray-500 print-border-b-2 flex items-center bg-gray-50 print-bg-gray shrink-0">
-                               <h2 className="text-2xl print:text-base font-black text-gray-800 print-text-black">
-                                 Notes
-                               </h2>
-                            </div>
-                            <div className="flex-1 w-full bg-white print:bg-white"></div>
-                         </div>
-                      </div>
-                    </React.Fragment>
-                  );
+                      </React.Fragment>
+                    );
+                  });
                 })}
               </div>
 
