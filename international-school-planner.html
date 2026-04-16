@@ -322,6 +322,13 @@
               <span className="text-xs text-gray-500 font-medium mt-0.5 truncate">
                 {isCurrentlyThisWeek ? 'Currently in this slot' : (isUsedElsewhere ? `Swap with Week ${usedIndex + 1}` : altBook.author)}
               </span>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {altBook.tags.map(tag => (
+                  <span key={tag} className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${isCurrentlyThisWeek ? 'bg-blue-100/50 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
             {!isCurrentlyThisWeek && (
               <button 
