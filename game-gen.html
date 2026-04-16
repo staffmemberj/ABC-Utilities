@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABC Garden - Activity & Game Generator</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #FAF8F5; /* ABC Garden warm off-white */
+      color: #1f2937;
+    }
+    
+    /* Custom Slider Styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 24px;
+      width: 24px;
+      border-radius: 50%;
+      background: #1E88E5;
+      cursor: pointer;
+      margin-top: -8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 8px;
+      cursor: pointer;
+      background: #e5e7eb;
+      border-radius: 4px;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .chip-enter { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Modal Animation */
+    .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; backdrop-filter: blur(0px); }
+      to { opacity: 1; backdrop-filter: blur(2px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+
+    // --- ICONS ---
+    const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>;
+    const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+    const UsersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+    const ZapIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+    const DiceIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>;
+    const TargetIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+    const BookOpenIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
+    const BoxIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>;
+    
+    // Additional Icons for new tabs
+    const DatabaseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>;
+    const PlusCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>;
+    const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
+    const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
+    const RefreshIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
+    const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
+    const Trash2Icon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
+    const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+    const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+
+    // --- CURRICULUM DATABASE ---
+    const masterCurriculum = {
+      st1: {
+        type: 'Show & Tell',
+        title: "Show & Tell 1",
+        units: [
+          { id: 1, title: "Unit 1: Who's in your family?", vocab: "brother, sister, mom, dad, family, hat, mittens, coat, friend, shoes", structure: "Who's he/she? He's/She's my (dad/mom). Put on your (coat)." },
+          { id: 2, title: "Unit 2: What's this?", vocab: "book, bag, pencil, crayon, doll, boat, teddy bear, bees, doors, old, new", structure: "What's this? It's a (crayon). Find the (boat). It's old/new." },
+          { id: 3, title: "Unit 3: How many eyes?", vocab: "eyes, ears, nose, mouth, head, tummy, hands, feet, arms, legs, hard, soft", structure: "How many (eyes)? I have 2 (eyes). Clap your hands. Shake your head." },
+          { id: 4, title: "Unit 4: What do you ride?", vocab: "car, bus, bike, train, boat, green, pink, purple, plane, balloon, fast, slow, big, small", structure: "Do you have a (bus)? Yes./No. What color is it? It's (green). The (train) is (fast/slow)." },
+          { id: 5, title: "Unit 5: What can you find outside?", vocab: "tree, lake, hill, slide, swing, seed, pot, water", structure: "I see a (tree). I'm big/small. Is it big/small? Yes./No." },
+          { id: 6, title: "Unit 6: What's in the toy box?", vocab: "table, chair, computer, toy box, square, circle, triangle, star, pattern", structure: "Where's the (computer)? It's on/in the (chair). Look at my (toy box)!" },
+          { id: 7, title: "Unit 7: What pets do you like?", vocab: "cat, bird, rabbit, turtle, pet, mouse, cute, favorite", structure: "I like (birds). My favorite pet is a (cat). I (feed) my (pet)." },
+          { id: 8, title: "Unit 8: What can you do?", vocab: "roll a hoop, bounce a balloon, stack cups, blow bubbles, throw, hop, count, jump, fly, crawl, swim", structure: "I can/can't (blow bubbles). Can you (count)? (A mouse) can/can't (swim)." },
+          { id: 9, title: "Unit 9: What snacks do you like?", vocab: "apple, grape, strawberry, banana, pizza, cheese, cookies, pancakes, carrot", structure: "Do you like (apples)? I don't like (pizza). My favorite snack is (a banana)." }
+        ]
+      },
+      st2: {
+        type: 'Show & Tell',
+        title: "Show & Tell 2",
+        units: [
+          { id: 1, title: "Unit 1: How do we make pictures?", vocab: "pen, brush, eraser, paper, glitter, paint, black, white, rock, gray, brown", structure: "What's this? It's an (eraser). This picture uses (orange) (paint)." },
+          { id: 2, title: "Unit 2: What can you do in the park?", vocab: "climb, catch, build, walk, run, kick, quickly, slowly, skip, sandbox", structure: "I can/can't (climb). Can you (climb)? He/She can (run)." },
+          { id: 3, title: "Unit 3: Who makes you happy?", vocab: "happy, sad, tired, hungry, thirsty, grandma, grandpa, brothers, sisters, surprise", structure: "How do you feel today? I'm (happy). I love my (mom). (She) makes me happy." },
+          { id: 4, title: "Unit 4: What happens when it's windy?", vocab: "sunny, rainy, windy, snowy, cold, warm, cloudy, wet, dry, boots, days of week", structure: "What's the weather like today? It's (sunny). What day is it? It's (Sunday)." },
+          { id: 5, title: "Unit 5: What's in your house?", vocab: "kitchen, living room, bedroom, bathroom, yard, balcony, sofa, bed, bath", structure: "I'm (in) the (kitchen). Where's (my duck)? It's behind (the sofa)." },
+          { id: 6, title: "Unit 6: What happens in the garden?", vocab: "dig, plant, water, pick, wash, eat, hole, delicious, potatoes, beans, soup", structure: "What are you doing? I'm (digging a hole). We're (watering) (the beans)." },
+          { id: 7, title: "Unit 7: What do farm animals do?", vocab: "cow, horse, sheep, goat, donkey, chicken, drink, say, do, grass, farm", structure: "What does a (goat) do? It (drinks) (water). The (horses) (eat) (grass)." },
+          { id: 8, title: "Unit 8: What do you wear when it's hot?", vocab: "jacket, skirt, T-shirt, pants, shorts, sandals, sweater, spring, summer, winter", structure: "I'm wearing (a green jacket). What do you wear in the (spring)?" },
+          { id: 9, title: "Unit 9: What do our senses tell us?", vocab: "sound, feel, look, smell, taste, loud, beautiful, quiet, soft, hard, music, rain", structure: "How does it (taste)? It (tastes) good/bad. How does it (feel)? It feels (soft)." }
+        ]
+      },
+      st3: {
+        type: 'Show & Tell',
+        title: "Show & Tell 3",
+        units: [
+          { id: 1, title: "Unit 1: What's your school like?", vocab: "classroom, computer room, art room, schoolyard, paint pictures, read stories", structure: "Welcome to (our school). These children (read stories) in their (classroom)." },
+          { id: 2, title: "Unit 2: What do you like to eat?", vocab: "meat, vegetables, fruit, pasta, rice, milk, breakfast, lunch, dinner, dessert", structure: "Do you like (fruit)? What's for (dinner)? They have (cereal) (for breakfast)." },
+          { id: 3, title: "Unit 3: What happens on your birthday?", vocab: "birthday cake, presents, cards, mask, candles, party, treasure hunt, months", structure: "There's (1) (birthday cake). My birthday is in (June). When's your birthday?" },
+          { id: 4, title: "Unit 4: What's in your neighborhood?", vocab: "swimming pool, zoo, library, supermarket, coffee shop, park, doctor", structure: "Where's (Sam)? He's at the (swimming pool). Do you want to go to the (zoo)?" },
+          { id: 5, title: "Unit 5: How do you have fun?", vocab: "dance, run, jump rope, roller skate, ride a bike, scooter, basketball, soccer", structure: "Are you (riding) scooters? Yes, we are. I love (flying my kite)." },
+          { id: 6, title: "Unit 6: Which animals live in the wild?", vocab: "elephant, giraffe, crocodile, monkey, lion, parrot, wild, neck, teeth, tail", structure: "What are they? They're (lions). Do they have (big) teeth?" },
+          { id: 7, title: "Unit 7: What jobs do people do?", vocab: "chef, police officer, firefighter, nurse, taxi driver, vet, hospital, work", structure: "Is he a (police officer)? He (works) in a (hospital)." },
+          { id: 8, title: "Unit 8: How do we make music?", vocab: "flute, piano, drums, tambourine, shaker, guitar, louder, quieter, slower, faster", structure: "I'm playing the (flute). Listen to the (trumpet). The music gets (louder)." },
+          { id: 9, title: "Unit 9: When do we change our clothes?", vocab: "tracksuit, shirt, sneakers, jeans, pajamas, costume, cape, superhero, mask", structure: "Is he wearing (blue jeans)? He's (putting on) his (jeans). Whose (hat) is this?" }
+        ]
+      },
+      lb1: {
+        type: "Let's Begin",
+        title: "Let's Begin 1",
+        units: [
+          { id: 1, title: "Lesson 1", vocab: "Andy, ant, alligator, apple", structure: "Hi, Andy! Hello!" },
+          { id: 2, title: "Lesson 2", vocab: "Andy, ant, alligator, apple", structure: "What's your name? I'm Eddie." },
+          { id: 3, title: "Lesson 3", vocab: "Eddie, elbow, egg, elephant, Isabel, ink, igloo, insect", structure: "Hi! How are you? I'm fine." },
+          { id: 4, title: "Lesson 4", vocab: "Oliver, octopus, omelet, ostrich, book, ball, jump rope, doll", structure: "What is it? It's a ball." },
+          { id: 5, title: "Lesson 5", vocab: "Uncle Jim, umpire, umbrella, upside down, balloon, bicycle, cap, bat", structure: "What is it? It's a balloon." },
+          { id: 6, title: "Lesson 6", vocab: "Carol, car, cat, candy, 1, 2, 3, 4, 5", structure: "Let's count! OK! 1!" },
+          { id: 7, title: "Lesson 7", vocab: "Gail, girl, gorilla, game, 6, 7, 8, 9, 10", structure: "Let's count! OK! 6!" },
+          { id: 8, title: "Lesson 8", vocab: "Beth, boy, bird, bag", structure: "How many? 7!" },
+          { id: 9, title: "Lesson 9", vocab: "boy, bird, bag, car, cat, candy, girl, gorilla, game", structure: "How old are you? I'm 7." },
+          { id: 10, title: "Lesson 10", vocab: "David, dog, desk, dinosaur, Peter, peach, pencil, picture, eggs, pencils, pictures, peaches", structure: "What are they? They're eggs. (Plurals)" },
+          { id: 11, title: "Lesson 11", vocab: "Tom, table, telephone, TV, cars, apples, dinosaurs, books", structure: "What are they? They're cars. (Plurals)" },
+          { id: 12, title: "Lesson 12", vocab: "Vicky, volcano, vest, violin, red, blue, yellow, green, orange", structure: "What color is it? It's blue." },
+          { id: 13, title: "Lesson 13", vocab: "Zack, zebra, zero, zipper, pink, purple, black, brown, white", structure: "What color is it? It's purple." },
+          { id: 14, title: "Lesson 14", vocab: "Fay, finger, foot, fan, circle, square, triangle, rectangle", structure: "What shape is it? It's a circle." },
+          { id: 15, title: "Lesson 15", vocab: "Luke, lamb, lemon, lion, star, diamond, heart, oval", structure: "What shape is it? It's a star." },
+          { id: 16, title: "Lesson 16", vocab: "Mary, moon, man, monkey", structure: "Good morning! Good night!" },
+          { id: 17, title: "Lesson 17", vocab: "Nina, nut, notebook, nest", structure: "Thank you! You're welcome." },
+          { id: 18, title: "Lesson 18", vocab: "Scott, sandwich, seesaw, sun, body, head, face, mouth", structure: "This is my body." },
+          { id: 19, title: "Lesson 19", vocab: "Mr. X, X-ray, box, fox, eyes, ears, nose, fingers", structure: "These are my eyes. This is my nose." },
+          { id: 20, title: "Lesson 20", vocab: "Jenny, jam, juice, jet, arms, hands, legs, feet", structure: "These are my arms." },
+          { id: 21, title: "Lesson 21", vocab: "Kate, kitten, kite, kangaroo, left, right, hand, foot", structure: "This is my left hand. This is my right foot." },
+          { id: 22, title: "Lesson 22", vocab: "Henry, hat, horse, house, shoulders, elbows, knees, toes", structure: "Touch your shoulders." },
+          { id: 23, title: "Lesson 23", vocab: "Quinn, queen, quilt, question, knee, nose, head", structure: "Ouch! I hurt my knee." },
+          { id: 24, title: "Lesson 24", vocab: "Roger, rocket, rabbit, radio, up, down, turn around, in, out", structure: "Let's go! OK!" },
+          { id: 25, title: "Lesson 25", vocab: "Wendy, water, watch, woman, run, skip, walk, jump", structure: "I can run." },
+          { id: 26, title: "Lesson 26", vocab: "Yolanda, yak, yarn, yo-yo, swim, hop, dance, sing", structure: "I can swim." },
+          { id: 27, title: "Lesson 27", vocab: "Alphabet Review", structure: "Goodbye! See you later!" },
+          { id: 28, title: "Lesson 28", vocab: "Alphabet Review", structure: "Goodbye! See you later!" }
+        ]
+      },
+      lb2: {
+        type: "Let's Begin",
+        title: "Let's Begin 2",
+        units: [
+          { id: 1, title: "Unit 1: Toys", vocab: "ball, jump rope, yo-yo, bicycle, train, car, doll, teddy bear", structure: "What is it? It's a yo-yo." },
+          { id: 2, title: "Unit 2: Colors", vocab: "red, blue, yellow, green, brown, purple, orange, pink, black, white", structure: "What color is it? It's purple." },
+          { id: 3, title: "Unit 3: Shapes", vocab: "circle, square, triangle, heart, star, diamond, oval, rectangle", structure: "Is it a star? Yes, it is." },
+          { id: 4, title: "Unit 4: Numbers", vocab: "Numbers 1-10", structure: "How many cats? 6 cats." },
+          { id: 5, title: "Unit 5: Animals", vocab: "dog, cat, bird, cow, rabbit, duck", structure: "How many cows? 8 cows." },
+          { id: 6, title: "Unit 6: Food", vocab: "ice cream, pizza, cake, chicken, milk, fish, bread, rice", structure: "Do you like fish? Yes, I do." },
+          { id: 7, title: "Unit 7: My Body", vocab: "head, shoulders, knees, toes, eyes, ears, mouth, nose", structure: "What can you do? I can touch my eyes." },
+          { id: 8, title: "Unit 8: I Can", vocab: "ride a bicycle, sing a song, fly a kite, bounce a ball, swim, smile, wink, dance", structure: "Can you dance? Yes, I can." }
+        ]
+      }
+    };
+
+    // --- INITIAL DATABASE OF ACTIVITIES ---
+    const initialGameDatabase = [
+      {
+        id: 'g1', name: 'Flashcard Safari',
+        isTwoPlayer: false,
+        minTime: 5, maxTime: 30, minStudents: 1, maxStudents: 12, energy: 4, prep: 2,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Listening / Comprehension'],
+        materials: ['Flashcards'],
+        unit: 'all',
+        objective: 'Find hidden vocabulary targets around the room and identify them correctly.',
+        setup: 'While students close their eyes (or before class), hide flashcards around the classroom. Ensure they are partially visible for younger students.',
+        rules: [
+          'Call out the target structure.',
+          'Students search the room like explorers to find the corresponding card.',
+          'When found, the student must bring it to the teacher and say the answer out loud to claim it.'
+        ],
+        teacherScript: '"Where is it? [Target Question]"',
+        studentScript: '"Here! [Target Answer]"'
+      },
+      {
+        id: 'g2', name: 'Slap! (Karuta)',
+        isTwoPlayer: true,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 8, energy: 3, prep: 1,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Phonics / Alphabet', 'Target Vocabulary', 'Listening / Comprehension'],
+        materials: ['Flashcards'],
+        unit: 'all',
+        objective: 'React quickly to auditory cues to identify the correct visual target.',
+        setup: 'Spread flashcards face-up on the floor or a large table. Students sit in a circle around the cards.',
+        rules: [
+          'Keep your hands on your head or knees until the prompt is called.',
+          'The teacher calls out the target structure.',
+          'Students race to slap the correct card first. The fastest slapper keeps the card as a point.'
+        ],
+        teacherScript: '"Hands on your head! Ready... listen: [Target Vocab]!"',
+        studentScript: '"[Target Vocab]! (Slaps card)"'
+      },
+      {
+        id: 'g3', name: 'Sticky Ball Toss',
+        isTwoPlayer: false,
+        minTime: 5, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 3, prep: 1,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Sentence Structures / Grammar', 'Phonics / Alphabet'],
+        materials: ['Soft Ball / Beanbag', 'Whiteboard & Markers'],
+        unit: 'all',
+        objective: 'Practice hand-eye coordination while answering target questions.',
+        setup: 'Draw a target on the whiteboard or stick flashcards to the board. Designate a throwing line.',
+        rules: [
+          'Students take turns throwing the soft ball at the board.',
+          'Wherever the ball hits, the student must perform the target structure related to that item.',
+          'Award points based on the target hit.'
+        ],
+        teacherScript: '"Throw the ball! What did you hit? [Target Question]"',
+        studentScript: '"[Target Answer]"'
+      },
+      {
+        id: 'g4', name: 'Four Corners',
+        isTwoPlayer: false,
+        minTime: 10, maxTime: 20, minStudents: 3, maxStudents: 12, energy: 4, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Listening / Comprehension', 'Target Vocabulary'],
+        materials: ['Flashcards'],
+        unit: 'all',
+        objective: 'Listen for your designated target to stay in the game.',
+        setup: 'Place a different flashcard in each of the 4 corners of the room.',
+        rules: [
+          'One student is "It" and stands in the middle with eyes closed, counting down from 10.',
+          'Other students quietly run to one of the four corners.',
+          '"It" calls out one of the targets without looking.',
+          'Any student standing in that corner is out (or must complete the dialogue to stay in).'
+        ],
+        teacherScript: '"Count to 10. Everyone choose a corner!"',
+        studentScript: '"10, 9, 8... Stop! I choose the [Target Vocab] corner!"'
+      },
+      {
+        id: 'g5', name: 'Memory Match (Concentration)',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 30, minStudents: 1, maxStudents: 4, energy: 1, prep: 3,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Phonics / Alphabet'],
+        materials: ['Flashcards'], // Needs duplicate sets
+        unit: 'all',
+        objective: 'Rely on memory to find matching pairs of vocabulary cards.',
+        setup: 'Place two identical sets of flashcards face down in a grid on the floor/table.',
+        rules: [
+          'Students take turns flipping over two cards.',
+          'They must complete the target structure out loud as they flip the card.',
+          'If the cards match, they keep the pair and go again. If not, they flip them back over.'
+        ],
+        teacherScript: '"Turn over two cards. Say it loudly!"',
+        studentScript: '"[Target Vocab]... No match."'
+      },
+      {
+        id: 'g6', name: 'Pictionary Relay',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 30, minStudents: 1, maxStudents: 12, energy: 3, prep: 0,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Speaking / Production'],
+        materials: ['Whiteboard & Markers'],
+        unit: 'all',
+        objective: 'Communicate vocabulary visually to teammates.',
+        setup: 'Divide the class into two teams. Draw a line down the middle of the whiteboard.',
+        rules: [
+          'Show a secret target to one student from each team.',
+          'They race to the board and draw it without speaking or using letters.',
+          'Their teammates guess using the target language. First team to guess correctly gets a point.'
+        ],
+        teacherScript: '"Don\'t say it! Just draw. Team, guess!"',
+        studentScript: '"I know! The word is [Target Vocab]!"'
+      },
+      {
+        id: 'g7', name: 'Telephone (Whisper Chain)',
+        isTwoPlayer: false,
+        minTime: 5, maxTime: 15, minStudents: 3, maxStudents: 12, energy: 1, prep: 0,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Listening / Comprehension', 'Sentence Structures / Grammar'],
+        materials: ['Nothing (No Props)'],
+        unit: 'all',
+        objective: 'Pass a verbal message accurately down a line of students.',
+        setup: 'Students sit in a line or circle.',
+        rules: [
+          'Whisper the target structure to the first student.',
+          'That student whispers it to the next, and so on.',
+          'The last student says it out loud. Compare it to the original.'
+        ],
+        teacherScript: '"Listen carefully. Pass the secret message."',
+        studentScript: '"(Whispering) [Target Language]"'
+      },
+      {
+        id: 'g8', name: 'Musical Flashcards',
+        isTwoPlayer: false,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 4, prep: 1,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Speaking / Production'],
+        materials: ['Flashcards', 'Music / Speaker'],
+        unit: 'all',
+        objective: 'Practice target vocabulary under the pressure of stopping music.',
+        setup: 'Place flashcards in a circle on the floor, one fewer than the number of students.',
+        rules: [
+          'Play the music. Students walk in a circle around the cards.',
+          'Stop the music. Students must quickly stand on or touch a card.',
+          'The student without a card is out (or becomes the music stopper).',
+          'Everyone left must complete the target structure based on their card.'
+        ],
+        teacherScript: '"Walk around the circle. When the music stops, find a card!"',
+        studentScript: '"My card is [Target Vocab]!"'
+      },
+      {
+        id: 'g9', name: 'Tic-Tac-Toe',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 1, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Sentence Structures / Grammar', 'Target Vocabulary'],
+        materials: ['Whiteboard & Markers', 'Flashcards'],
+        unit: 'all',
+        objective: 'Use strategy to win while practicing grammar structures.',
+        setup: 'Draw a 3x3 grid on the board. Stick a flashcard in each square or write words.',
+        rules: [
+          'Divide into X and O teams (or Teacher vs Student).',
+          'To place a mark, the student must complete the target structure perfectly.',
+          'First to get 3 in a row wins.'
+        ],
+        teacherScript: '"Choose a square and complete the dialogue to get your X!"',
+        studentScript: '"I want the top right. [Target Question] [Target Answer]"'
+      },
+      {
+        id: 'g10', name: 'What is Missing?',
+        isTwoPlayer: false,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 1, prep: 1,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Speaking / Production'],
+        materials: ['Flashcards'],
+        unit: 'all',
+        objective: 'Use visual memory to identify the missing vocabulary word.',
+        setup: 'Place 5-8 flashcards on the board or floor. Review them together.',
+        rules: [
+          'Tell students to close their eyes ("Close your eyes, no peeking!").',
+          'Remove one card and hide it.',
+          'Tell students to open their eyes and guess which is missing.'
+        ],
+        teacherScript: '"Close your eyes... Open! What is missing?"',
+        studentScript: '"[Target Vocab] is missing!"'
+      },
+      {
+        id: 'g11', name: 'Action Relay Race',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 5, prep: 0,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Listening / Comprehension'],
+        materials: ['Nothing (No Props)'],
+        unit: 'all',
+        objective: 'Follow TPR (Total Physical Response) commands in a relay format.',
+        setup: 'Divide into teams. Establish a starting line and a turnaround point.',
+        rules: [
+          'Call out an action or the target structure.',
+          'The first student in each line must do the action to the turnaround point and back.',
+          'They tag the next student. First team to finish sits down and says "Finished!"'
+        ],
+        teacherScript: '"Are you ready? Go! Practice: [Target Language]!"',
+        studentScript: '"Finished!"'
+      },
+      {
+        id: 'g12', name: 'Hot Potato',
+        isTwoPlayer: true,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 3, prep: 0,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Speaking / Production', 'Target Vocabulary'],
+        materials: ['Soft Ball / Beanbag', 'Music / Speaker'],
+        unit: 'all',
+        objective: 'Produce target language quickly under pressure.',
+        setup: 'Students sit in a close circle.',
+        rules: [
+          'Play music. Students pass the ball around the circle as fast as they can.',
+          'Stop the music. The student holding the ball must answer a question or say the target.',
+          'Resume music immediately.'
+        ],
+        teacherScript: '"Pass the ball! Quick! ... Stop! [Target Question]"',
+        studentScript: '"[Target Answer]!"'
+      },
+      {
+        id: 'g13', name: 'Charades',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 30, minStudents: 1, maxStudents: 12, energy: 3, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Speaking / Production'],
+        materials: ['Flashcards'],
+        unit: 'all',
+        objective: 'Act out targets for classmates to guess.',
+        setup: 'Have a stack of vocabulary cards ready.',
+        rules: [
+          'One student comes to the front and draws a card.',
+          'They must act out the target without making any sounds.',
+          'The rest of the class guesses using the target structure. The correct guesser goes next.'
+        ],
+        teacherScript: '"No talking! Show us the word with your body."',
+        studentScript: '"I know! The word is [Target Vocab]!"'
+      },
+      {
+        id: 'g14', name: 'Board Race / Fly Swatter',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 5, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Listening / Comprehension', 'Phonics / Alphabet', 'Target Vocabulary'],
+        materials: ['Flashcards', 'Whiteboard & Markers'],
+        unit: 'all',
+        objective: 'Listen for the target and race to identify it on the board.',
+        setup: 'Stick flashcards or write words randomly all over the whiteboard. Divide the class into two lines facing the board.',
+        rules: [
+          'Give the first student in each line a marker (or fly swatter).',
+          'Call out the target structure.',
+          'The two students race to the board and tap the correct image. First one gets a point.'
+        ],
+        teacherScript: '"Listen carefully... Touch: [Target Vocab]!"',
+        studentScript: '"(Taps board) [Target Vocab]!"'
+      },
+      {
+        id: 'g15', name: '20 Questions (Mystery Item)',
+        isTwoPlayer: false,
+        minTime: 10, maxTime: 30, minStudents: 1, maxStudents: 12, energy: 1, prep: 0,
+        ages: ['Elementary'],
+        targets: ['Sentence Structures / Grammar', 'Speaking / Production'],
+        materials: ['Nothing (No Props)'],
+        unit: 'all',
+        objective: 'Ask strategic Yes/No questions to deduce the hidden word.',
+        setup: 'The teacher thinks of a secret vocabulary word (or holds a card hidden).',
+        rules: [
+          'Students can only ask Yes or No questions (e.g., "Is it an animal?", "Is it big?").',
+          'The teacher answers Yes or No.',
+          'Students have up to 20 questions to guess the item.'
+        ],
+        teacherScript: '"I am thinking of a secret word. Ask me questions!"',
+        studentScript: '"Is the word [Target Vocab]?"'
+      },
+      {
+        id: 'g16', name: 'Blindfold Obstacle Course',
+        isTwoPlayer: true,
+        minTime: 15, maxTime: 30, minStudents: 1, maxStudents: 12, energy: 4, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Speaking / Production', 'Sentence Structures / Grammar'],
+        materials: ['Nothing (No Props)'], // Chairs/desks used as obstacles
+        unit: 'all',
+        objective: 'Practice directional vocabulary (left, right, forward, stop) to guide a partner.',
+        setup: 'Create a simple, safe obstacle course using classroom chairs.',
+        rules: [
+          'One student is blindfolded (or closes their eyes).',
+          'Their partner must guide them through the course using only English words (Go straight, turn left, stop).',
+          'If they touch an obstacle, they must start over.'
+        ],
+        teacherScript: '"Guide your partner safely. Use your big voice!"',
+        studentScript: '"Go straight. Stop! Turn left. Now say: [Target Vocab]!"'
+      },
+      {
+        id: 'g17', name: 'Walking Dictation',
+        isTwoPlayer: true,
+        minTime: 15, maxTime: 30, minStudents: 1, maxStudents: 12, energy: 3, prep: 2,
+        ages: ['Elementary'],
+        targets: ['Sentence Structures / Grammar', 'Speaking / Production', 'Phonics / Alphabet'],
+        materials: ['Whiteboard & Markers'], // Plus paper/pencils
+        unit: 'all',
+        objective: 'Practice reading, memorizing, speaking, and writing structures.',
+        setup: 'Write 4-5 sentences on a piece of paper and stick it outside the classroom or far from the desks. Pair students.',
+        rules: [
+          'Student A is the "Runner" and Student B is the "Writer".',
+          'The Runner runs to the paper, reads and memorizes as much of the sentence as possible, runs back, and dictates it to the Writer.',
+          'The Runner can go back and forth as many times as needed.'
+        ],
+        teacherScript: '"Run, read, remember, and tell your partner! No shouting!"',
+        studentScript: '"[Target Language]... wait, I forgot. Let me look again!"'
+      },
+      {
+        id: 'g18', name: 'Pass the Secret (The Bomb Game)',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 3, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Speaking / Production'],
+        materials: ['Soft Ball / Beanbag'], // Or a timer
+        unit: 'all',
+        objective: 'Produce vocabulary quickly before the "timer" goes off.',
+        setup: 'Set a phone timer for a random amount of time (e.g., 30-45 seconds) and hide it.',
+        rules: [
+          'The student holding the "bomb" (ball) must complete the target structure.',
+          'Once they answer correctly, they pass the ball to the next person.',
+          'Whoever is holding the ball when the timer rings loses a "life" or does 5 jumping jacks.'
+        ],
+        teacherScript: '"Say the target word to pass the bomb. Go!"',
+        studentScript: '"[Target Vocab]! (Passes ball)"'
+      },
+      {
+        id: 'g19', name: 'Sentence Unscramble',
+        isTwoPlayer: false,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 1, prep: 2,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Sentence Structures / Grammar'],
+        materials: ['Flashcards', 'Whiteboard & Markers'], // Uses word cards
+        unit: 'all',
+        objective: 'Understand grammar order by physically rearranging words.',
+        setup: 'Write words of a target sentence on separate index cards or whiteboard magnets.',
+        rules: [
+          'Mix up the words on the board or desk.',
+          'Students must work together or race to put the words in the correct grammatical order.',
+          'Once ordered, they must read the sentence aloud.'
+        ],
+        teacherScript: '"This sentence is broken. Can you fix it?"',
+        studentScript: '"[Target Language]"'
+      },
+      {
+        id: 'g20', name: 'Shiritori (Word Chain)',
+        isTwoPlayer: true,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 1, prep: 0,
+        ages: ['Elementary'],
+        targets: ['Phonics / Alphabet', 'Target Vocabulary'],
+        materials: ['Whiteboard & Markers'],
+        unit: 'all',
+        objective: 'Think of a word that starts with the last letter of the previous word.',
+        setup: 'Write a starting word on the board (e.g., "Apple").',
+        rules: [
+          'The next student must write or say a word starting with the last letter of the previous word (e.g., Apple -> Elephant -> Tiger).',
+          'No repeating words. If a student gets stuck for 10 seconds, they pass.'
+        ],
+        teacherScript: '"Think of a word that connects! Go!"',
+        studentScript: '"[Target Vocab]!"'
+      },
+      {
+        id: 'g21', name: 'Parachute Color Shake',
+        isTwoPlayer: false,
+        minTime: 10, maxTime: 15, minStudents: 2, maxStudents: 12, energy: 4, prep: 0,
+        ages: ['Pre-K', 'Kindergarten'],
+        targets: ['Listening / Comprehension', 'Target Vocabulary'],
+        materials: ['Parachute / Bed Sheet'], 
+        unit: 'all',
+        objective: 'Practice listening skills and color/vocab recognition through gross motor play.',
+        setup: 'Have students grab the edges of a parachute or large sheet.',
+        rules: [
+          'Call out "Shake it fast!" or "Shake it slow!"',
+          'Throw soft items (balls, flashcards) onto the parachute.',
+          'Call out a specific target (e.g., "Bounce the Red ball out!"). Students work together to pop it out.'
+        ],
+        teacherScript: '"Shake fast! Shake slow... Pop the [Target Vocab] up!"',
+        studentScript: '"Wheeeee! Pop!"'
+      },
+      {
+        id: 'g22', name: 'Find Your Partner',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 3, prep: 2,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Speaking / Production', 'Listening / Comprehension'],
+        materials: ['Flashcards'], // Duplicate sets
+        unit: 'all',
+        objective: 'Engage in Q&A to find the person holding the matching card.',
+        setup: 'Distribute a duplicate set of flashcards so everyone has a pair somewhere in the room. Keep cards hidden.',
+        rules: [
+          'Students walk around the room.',
+          'They approach a classmate and use the target structure to ask a question.',
+          'If the answer is Yes, they sit down together. If No, they ask someone else.'
+        ],
+        teacherScript: '"Keep your card secret! Ask the question to find your match."',
+        studentScript: '"[Target Question]" "No, I don\'t. [Target Answer]"'
+      },
+      {
+        id: 'g23', name: 'Back-to-Back Drawing',
+        isTwoPlayer: true,
+        minTime: 15, maxTime: 30, minStudents: 1, maxStudents: 12, energy: 1, prep: 0,
+        ages: ['Elementary'],
+        targets: ['Speaking / Production', 'Listening / Comprehension'],
+        materials: ['Whiteboard & Markers'], // Or paper/pencil
+        unit: 'all',
+        objective: 'Practice descriptive vocabulary and active listening.',
+        setup: 'Pair students up. Have them sit back-to-back. Give Student A a picture or a flashcard. Give Student B paper and a marker.',
+        rules: [
+          'Student A describes the picture using shapes, colors, and prepositions.',
+          'Student B draws exactly what they hear, without looking.',
+          'Compare the drawing to the original picture.'
+        ],
+        teacherScript: '"Describe it carefully so your partner can draw it."',
+        studentScript: '"Draw this: [Target Vocab]"'
+      },
+      {
+        id: 'g24', name: 'Simon Says',
+        isTwoPlayer: false,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 3, prep: 0,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Listening / Comprehension', 'Target Vocabulary'],
+        materials: ['Nothing (No Props)'],
+        unit: 'all',
+        objective: 'Practice listening discrimination and body parts/action verbs.',
+        setup: 'Have students stand up facing the teacher.',
+        rules: [
+          'Give action commands. If preceded by "Simon says...", students must do it.',
+          'If you do NOT say "Simon says", students must stay frozen.',
+          'If they move, they sit down (or do a silly dance to rejoin).'
+        ],
+        teacherScript: '"Simon says... point to the [Target Vocab]!"',
+        studentScript: '"(Points) / (Giggles) Oh no, I moved!"'
+      },
+      {
+        id: 'g25', name: 'Freeze Dance Vocab',
+        isTwoPlayer: false,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 5, prep: 1,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Listening / Comprehension', 'Speaking / Production'],
+        materials: ['Music / Speaker', 'Flashcards'],
+        unit: 'all',
+        objective: 'Combine gross motor movement with rapid vocabulary recall.',
+        setup: 'Hold up a flashcard while playing music.',
+        rules: [
+          'Students dance freely while the music plays.',
+          'When you pause the music, you hold up a flashcard.',
+          'Students must freeze like statues and shout the target structure.'
+        ],
+        teacherScript: '"Dance, dance, dance... Freeze! Look at the card!"',
+        studentScript: '"(Frozen) The word is [Target Vocab]!"'
+      },
+      {
+        id: 'g26', name: 'Bingo Grid',
+        isTwoPlayer: false,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 1, prep: 2,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Listening / Comprehension', 'Phonics / Alphabet'],
+        materials: ['Flashcards', 'Whiteboard & Markers'],
+        unit: 'all',
+        objective: 'Encourage vocabulary memorization and listening comprehension.',
+        setup: 'Students arrange 9 flashcards in a 3x3 grid (or draw a grid on a whiteboard).',
+        rules: [
+          'The caller calls out a target word or phrase.',
+          'If the student has the matching card in their grid, they flip it over or cross it out.',
+          'The first student to cover three squares across, down, or diagonally shouts "Bingo!"'
+        ],
+        teacherScript: '"Are you ready? Find the square for [Target Vocab]!"',
+        studentScript: '"Bingo! I have three in a row!"'
+      },
+      {
+        id: 'g27', name: '1, 2, 3, Finished!',
+        isTwoPlayer: true,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 3, prep: 0,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Speaking / Production', 'Sentence Structures / Grammar'],
+        materials: ['Nothing (No Props)'],
+        unit: 'all',
+        objective: 'Fast-paced Q&A drilling to build conversational fluency.',
+        setup: 'Divide the class into pairs. For a single student, the teacher acts as the partner.',
+        rules: [
+          'Pairs take turns asking and answering the target question.',
+          'They must complete the exchange three times as fast as possible.',
+          'Once finished, they immediately sit down and shout "Finished!"'
+        ],
+        teacherScript: '"Ask and answer three times! Ready, go!"',
+        studentScript: '"[Target Question] [Target Answer] ... Finished!"'
+      },
+      {
+        id: 'g28', name: 'Pick Up (Rock, Paper, Scissors)',
+        isTwoPlayer: true,
+        minTime: 5, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 2, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Speaking / Production'],
+        materials: ['Flashcards'],
+        unit: 'all',
+        objective: 'Incentivize Q&A practice through a simple, competitive mini-game.',
+        setup: 'Place multiple sets of flashcards face down between the pairs.',
+        rules: [
+          'Pairs play Rock, Paper, Scissors.',
+          'The winner picks up a face-down card and initiates the target structure.',
+          'The partner answers. The winner keeps the card as a point. Continue until cards are gone.'
+        ],
+        teacherScript: '"Rock, paper, scissors, go! Pick a card!"',
+        studentScript: '"[Target Question] [Target Answer]"'
+      },
+      {
+        id: 'g29', name: 'Step Away Lines',
+        isTwoPlayer: true,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 3, prep: 0,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Speaking / Production', 'Sentence Structures / Grammar'],
+        materials: ['Nothing (No Props)'],
+        unit: 'all',
+        objective: 'Encourage students to speak loudly and build confidence.',
+        setup: 'Partners stand facing each other closely. (Teacher acts as partner for 1-on-1).',
+        rules: [
+          'Partners ask and answer the target dialogue.',
+          'Each time they successfully complete the exchange, they take one giant step backward.',
+          'They must repeat the dialogue, speaking louder each time to be heard from far away.'
+        ],
+        teacherScript: '"Ask the question. Good! Now take a giant step back!"',
+        studentScript: '"(Shouting) [Target Question] [Target Answer]"'
+      },
+      {
+        id: 'g30', name: 'Do It! (Action Count)',
+        isTwoPlayer: false,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 4, prep: 0,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Listening / Comprehension', 'Target Vocabulary'],
+        materials: ['Nothing (No Props)'],
+        unit: 'all',
+        objective: 'Review action verbs and numbers simultaneously.',
+        setup: 'Have students clear space around their desks to stand safely.',
+        rules: [
+          'Call out a command and a number between 1 and 10.',
+          'Students must perform the physical action that many times.',
+          'As they perform the action, they must count out loud or say the verb.'
+        ],
+        teacherScript: '"Listen to the word and do the action! Go!"',
+        studentScript: '"[Target Vocab]! One, two, three!"'
+      },
+      {
+        id: 'g31', name: 'Letter Trace Relay',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 3, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Phonics / Alphabet', 'Listening / Comprehension'],
+        materials: ['Whiteboard & Markers'],
+        unit: 'all',
+        objective: 'Tactile letter recognition and rapid writing practice.',
+        setup: 'Line students up facing the whiteboard. Give the front student a marker.',
+        rules: [
+          'Trace a letter on the back of the last student in line.',
+          'The student traces it on the back of the next person. (For 1 student, trace directly on their back).',
+          'The front student runs to the board, writes the letter, and shouts a word that starts with it.'
+        ],
+        teacherScript: '"Feel it... pass it on! What is it?"',
+        studentScript: '"It\'s... [Target Vocab]!"'
+      },
+      {
+        id: 'g32', name: 'Memory Chain',
+        isTwoPlayer: true,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 1, prep: 0,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Sentence Structures / Grammar', 'Speaking / Production'],
+        materials: ['Nothing (No Props)'],
+        unit: 'all',
+        objective: 'Build working memory and practice sentence compounding.',
+        setup: 'Sit in a circle. For 1-on-1, sit across from the student.',
+        rules: [
+          'S1 states the target sentence with a vocabulary word (e.g., "I like red").',
+          'S2 must repeat S1\'s sentence and add their own (e.g., "I like red and blue").',
+          'Continue alternating until someone forgets the chain.'
+        ],
+        teacherScript: '"Let\'s build a long chain. Try to remember!"',
+        studentScript: '"I remember [Vocab 1] and [Vocab 2]!"'
+      },
+      {
+        id: 'g33', name: 'Walk and Talk',
+        isTwoPlayer: true,
+        minTime: 10, maxTime: 20, minStudents: 1, maxStudents: 12, energy: 3, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Speaking / Production', 'Target Vocabulary'],
+        materials: ['Flashcards'],
+        unit: 'all',
+        objective: 'Dynamic, movement-based paired speaking practice.',
+        setup: 'Scatter pairs of non-matching flashcards around the room.',
+        rules: [
+          'Students walk freely around the room.',
+          'When you call "Stop!", pairs must stop at the nearest cards.',
+          'They use the cards as cues to exchange the target question and answer.'
+        ],
+        teacherScript: '"Walk, walk, walk... Stop! Ask your partner!"',
+        studentScript: '"[Target Question] [Target Answer]"'
+      },
+      {
+        id: 'g34', name: 'Dialogue Musical Chairs',
+        isTwoPlayer: false,
+        minTime: 10, maxTime: 20, minStudents: 3, maxStudents: 12, energy: 4, prep: 1,
+        ages: ['Kindergarten', 'Elementary'],
+        targets: ['Speaking / Production', 'Listening / Comprehension'],
+        materials: ['Music / Speaker'],
+        unit: 'all',
+        objective: 'Review conversations under pressure in a fun, active format.',
+        setup: 'Arrange chairs back-to-back in a row, with two fewer chairs than students.',
+        rules: [
+          'Play music while students walk around the chairs.',
+          'When the music stops, students scramble to sit down.',
+          'The two students left standing must perform the target dialogue together for the class.'
+        ],
+        teacherScript: '"Walk around... Stop! Oh, you two are standing! Do the dialogue!"',
+        studentScript: '"[Target Question] [Target Answer]"'
+      },
+      {
+        id: 'g35', name: 'Say It (Memory Flash)',
+        isTwoPlayer: false,
+        minTime: 5, maxTime: 15, minStudents: 1, maxStudents: 12, energy: 2, prep: 1,
+        ages: ['Pre-K', 'Kindergarten', 'Elementary'],
+        targets: ['Target Vocabulary', 'Speaking / Production'],
+        materials: ['Flashcards'],
+        unit: 'all',
+        objective: 'Spontaneous vocabulary recognition and sequence memorization.',
+        setup: 'Hold a stack of 3 to 5 flashcards facing yourself.',
+        rules: [
+          'Show the flashcards to the students one at a time very quickly, then put them face down.',
+          'Students must repeat the words aloud in the exact order they were shown.',
+          'Gradually increase the number of cards or the speed to increase difficulty.'
+        ],
+        teacherScript: '"Look carefully... one, two, three. Okay, what were they?"',
+        studentScript: '"[Vocab 1], [Vocab 2], [Vocab 3]!"'
+      }
+    ];
+
+    const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+
+    const App = () => {
+      // --- TAB STATE ---
+      const [activeTab, setActiveTab] = useState('generator'); // generator, maker, repository
+
+      // --- STATE FOR SLIDERS (Generator Tab) ---
+      const [duration, setDuration] = useState(30); // 5 to 30 mins
+      const [classSize, setClassSize] = useState(1); // 1 to 12 students
+      const [energy, setEnergy] = useState(3); // 1 to 5
+      const [prep, setPrep] = useState(2); // 0 to 5
+
+      // --- STATE FOR PROGRAM & CURRICULUM (Generator Tab) ---
+      const [programGroup, setProgramGroup] = useState('international'); // 'international' or 'afterschool'
+      const [selectedCurriculum, setSelectedCurriculum] = useState('none');
+      const [selectedUnit, setSelectedUnit] = useState(1);
+
+      // --- STATE FOR TOGGLES (Generator Tab) ---
+      const [languageTargets, setLanguageTargets] = useState(['Target Vocabulary', 'Speaking / Production']);
+      const [materials, setMaterials] = useState(['Flashcards', 'Whiteboard & Markers', 'Soft Ball / Beanbag', 'Music / Speaker', 'Parachute / Bed Sheet', 'Nothing (No Props)']);
+      
+      // Output State (Generator Tab)
+      const [generatedActivity, setGeneratedActivity] = useState(null);
+      const [isGenerating, setIsGenerating] = useState(false);
+
+      // Options
+      const ageOptions = ['Pre-K', 'Kindergarten', 'Elementary'];
+      const targetOptions = ['Phonics / Alphabet', 'Target Vocabulary', 'Sentence Structures / Grammar', 'Listening / Comprehension', 'Speaking / Production'];
+      const materialOptions = ['Flashcards', 'Whiteboard & Markers', 'Soft Ball / Beanbag', 'Music / Speaker', 'Parachute / Bed Sheet', 'Nothing (No Props)'];
+
+      // Curriculum Options based on Program
+      const curriculumOptions = programGroup === 'international' ? [
+        { id: 'none', title: 'Generic (No Curriculum)' },
+        { id: 'st1', title: 'Show & Tell 1' },
+        { id: 'st2', title: 'Show & Tell 2' },
+        { id: 'st3', title: 'Show & Tell 3' }
+      ] : [
+        { id: 'none', title: 'Generic (No Curriculum)' },
+        { id: 'lb1', title: "Let's Begin 1" },
+        { id: 'lb2', title: "Let's Begin 2" }
+      ];
+
+      // --- STATE FOR REPOSITORY ---
+      const [repository, setRepository] = useState(() => {
+        const saved = localStorage.getItem('abc_activity_repository');
+        return saved ? JSON.parse(saved) : initialGameDatabase;
+      });
+      const [searchQuery, setSearchQuery] = useState('');
+
+      useEffect(() => {
+        localStorage.setItem('abc_activity_repository', JSON.stringify(repository));
+      }, [repository]);
+
+      // --- STATE FOR ACTIVITY MAKER & EDITING ---
+      const emptyActivity = {
+        name: '', isTwoPlayer: false, minTime: 5, maxTime: 30, minStudents: 1, maxStudents: 12, energy: 3, prep: 2,
+        ages: [], targets: [], materials: [], unit: 'all',
+        objective: '', setup: '', rulesText: '', teacherScript: '', studentScript: ''
+      };
+      const [newActivity, setNewActivity] = useState(emptyActivity);
+      const [editingActivityId, setEditingActivityId] = useState(null);
+
+      // Reset curriculum if program changes
+      useEffect(() => {
+        setSelectedCurriculum('none');
+        setSelectedUnit(1);
+      }, [programGroup]);
+
+      // --- HELPERS ---
+      const toggleArray = (array, setArray, item) => {
+        if (array.includes(item)) {
+          if (array.length > 1) setArray(array.filter(i => i !== item));
+        } else {
+          setArray([...array, item]);
+        }
+      };
+
+      const toggleFormArray = (formState, setFormState, field, item) => {
+        const currentArr = formState[field] || [];
+        if (currentArr.includes(item)) {
+          setFormState({ ...formState, [field]: currentArr.filter(i => i !== item) });
+        } else {
+          setFormState({ ...formState, [field]: [...currentArr, item] });
+        }
+      };
+
+      // Helper to verify Unit Matches across comma-separated arrays for Generator
+      const matchesUnit = (gameUnit, targetUnitStr) => {
+        if (!gameUnit || gameUnit === 'all') return true;
+        if (!targetUnitStr) return true;
+        const tags = gameUnit.split(',').map(s => s.trim());
+        const bookPrefix = targetUnitStr.split('-')[0]; // e.g. 'lb1'
+        return tags.includes(targetUnitStr) || tags.includes(`${bookPrefix}-all`);
+      };
+
+      // --- THE MATCHING ENGINE ---
+      const generateLesson = (isSurprise = false) => {
+        setIsGenerating(true);
+        
+        setTimeout(() => {
+          let possibleMatches = [];
+          const targetUnitStr = selectedCurriculum !== 'none' ? `${selectedCurriculum}-${selectedUnit}` : null;
+
+          if (isSurprise) {
+            // Pick any game randomly, but try to respect the unit if one is chosen
+            if (targetUnitStr) {
+                possibleMatches = repository.filter(game => matchesUnit(game.unit, targetUnitStr));
+                if (possibleMatches.length === 0) possibleMatches = [...repository]; // fallback
+            } else {
+                possibleMatches = [...repository];
+            }
+          } else {
+            let highestScore = -100;
+            const effectiveMaterials = [...materials];
+            if (!effectiveMaterials.includes('Nothing (No Props)')) {
+              effectiveMaterials.push('Nothing (No Props)');
+            }
+
+            repository.forEach(game => {
+              if (classSize < game.minStudents || classSize > game.maxStudents) return;
+              if (duration < game.minTime) return; 
+              
+              const allowedAges = programGroup === 'international' ? ['Pre-K', 'Kindergarten'] : ['Elementary'];
+              const isAgeMatch = game.ages && game.ages.some(a => allowedAges.includes(a));
+              if (!isAgeMatch && game.ages && game.ages.length > 0) return;
+
+              const hasRequiredMaterials = game.materials && game.materials.every(m => effectiveMaterials.includes(m));
+              if (!hasRequiredMaterials && game.materials && game.materials.length > 0) return;
+              
+              if (!matchesUnit(game.unit, targetUnitStr)) return;
+
+              let score = 0;
+              const energyDiff = Math.abs(energy - game.energy);
+              score += (5 - energyDiff);
+
+              if (game.prep <= prep) {
+                score += 2;
+              } else {
+                score -= 3;
+              }
+
+              const targetOverlap = game.targets ? game.targets.filter(t => languageTargets.includes(t)).length : 0;
+              score += (targetOverlap * 2);
+
+              if (score > highestScore) {
+                highestScore = score;
+                possibleMatches = [game];
+              } else if (score === highestScore) {
+                possibleMatches.push(game);
+              }
+            });
+          }
+
+          if (possibleMatches.length > 0) {
+            const selected = possibleMatches[Math.floor(Math.random() * possibleMatches.length)];
+            let finalActivity = { ...selected };
+            
+            if (selectedCurriculum !== 'none') {
+                const unitData = masterCurriculum[selectedCurriculum].units.find(u => u.id === selectedUnit);
+                if (unitData) {
+                    
+                    let q = "Say the target phrase";
+                    let a = unitData.structure;
+                    let lang = unitData.structure;
+
+                    if (lang.includes('?')) {
+                        const parts = lang.split('?');
+                        q = parts[0].trim() + '?';
+                        a = parts.slice(1).join('?').trim();
+                        if (!a) a = q; 
+                    } else {
+                        q = "Look at this: " + lang;
+                    }
+
+                    const vocabList = unitData.vocab.split(',').map(w => w.trim()).filter(w => w.length > 0);
+                    let usedVocab = [];
+                    const getVocab = () => {
+                        if (vocabList.length === 0) return "target word";
+                        let available = vocabList.filter(v => !usedVocab.includes(v));
+                        if (available.length === 0) { 
+                            available = vocabList; 
+                            usedVocab = []; 
+                        } 
+                        const w = available[Math.floor(Math.random() * available.length)];
+                        usedVocab.push(w);
+                        return w;
+                    };
+
+                    const replacePlaceholders = (text) => {
+                        if(!text) return "";
+                        let result = text
+                            .replace(/\[Target Question\]/gi, q)
+                            .replace(/\[Target Answer\]/gi, a)
+                            .replace(/\[Target Language\]/gi, lang);
+                        
+                        result = result.replace(/\[Target Vocab\]/gi, () => getVocab());
+                        result = result.replace(/\[Vocab \d+\]/gi, () => getVocab());
+                        return result;
+                    };
+                    
+                    finalActivity.teacherScript = replacePlaceholders(finalActivity.teacherScript);
+                    finalActivity.studentScript = replacePlaceholders(finalActivity.studentScript);
+                    
+                    finalActivity.curriculumData = {
+                        course: masterCurriculum[selectedCurriculum].title,
+                        unit: unitData.title,
+                        vocab: unitData.vocab,
+                        structure: unitData.structure
+                    };
+                }
+            } else {
+                const replacePlaceholdersFallback = (text) => {
+                    if(!text) return "";
+                    return text
+                        .replace(/\[Target Question\]/gi, "[Target Question]")
+                        .replace(/\[Target Answer\]/gi, "[Target Answer]")
+                        .replace(/\[Target Language\]/gi, "[Target Language]")
+                        .replace(/\[Target Vocab\]/gi, "[Target Word]")
+                        .replace(/\[Vocab \d+\]/gi, "[Target Word]");
+                };
+                finalActivity.teacherScript = replacePlaceholdersFallback(finalActivity.teacherScript);
+                finalActivity.studentScript = replacePlaceholdersFallback(finalActivity.studentScript);
+            }
+            
+            setGeneratedActivity(finalActivity);
+          } else {
+            setGeneratedActivity({
+              name: 'Free Talk / Review Circle',
+              isTwoPlayer: false,
+              minTime: duration, energy: 1, prep: 0,
+              minStudents: 1, maxStudents: 12,
+              targets: languageTargets, materials: ['Nothing (No Props)'],
+              objective: 'Adapt to available resources by reviewing previous material in a conversational setting.',
+              setup: 'Sit in a circle with the students.',
+              rules: ['Go around the circle asking simple review questions based on past lessons.', 'Adjust difficulty on the fly.'],
+              teacherScript: '"Let\'s talk! How are you today? What did we learn last week?"',
+              studentScript: '"I am happy! We learned about animals."'
+            });
+          }
+          
+          setIsGenerating(false);
+        }, 600);
+      };
+
+      // Set initial activity on load
+      useEffect(() => {
+        generateLesson();
+      }, []);
+
+
+      // --- REPOSITORY ACTIONS ---
+      const handleSaveActivity = (e) => {
+        e.preventDefault();
+        if (!newActivity.name) {
+          alert('Please provide a name for the activity.');
+          return;
+        }
+
+        const activityToSave = {
+          ...newActivity,
+          id: editingActivityId || generateId(),
+          rules: newActivity.rulesText ? newActivity.rulesText.split('\n').filter(r => r.trim() !== '') : []
+        };
+
+        delete activityToSave.rulesText;
+
+        if (editingActivityId) {
+          setRepository(repository.map(act => act.id === editingActivityId ? activityToSave : act));
+          setEditingActivityId(null);
+        } else {
+          setRepository([...repository, activityToSave]);
+          alert("Activity added to the repository!");
+        }
+        setNewActivity(emptyActivity);
+        if(editingActivityId) setActiveTab('repository');
+      };
+
+      const handleEditActivity = (act) => {
+        setNewActivity({
+          ...act,
+          rulesText: act.rules ? act.rules.join('\n') : '',
+          ages: act.ages || [],
+          targets: act.targets || [],
+          materials: act.materials || [],
+          unit: act.unit || 'all'
+        });
+        setEditingActivityId(act.id);
+      };
+
+      const removeActivity = (id) => {
+        if(confirm("Are you sure you want to delete this activity?")) {
+          setRepository(repository.filter(a => a.id !== id));
+        }
+      };
+
+      // Entire Database Export
+      const handleExport = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(repository, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "abc_activity_database.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+      };
+
+      // Entire Database Import
+      const handleImport = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const parsed = JSON.parse(e.target.result);
+            if (Array.isArray(parsed)) {
+              setRepository(parsed);
+              alert("Repository imported successfully!");
+            } else {
+              alert("Invalid file format. Expected an array of activities.");
+            }
+          } catch (err) {
+            alert("Error reading file.");
+          }
+          event.target.value = null; 
+        };
+        reader.readAsText(file);
+      };
+
+      // Single Activity Export
+      const handleExportSingle = (act) => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(act, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `${act.name.replace(/\s+/g, '_')}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+      };
+
+      // Single Activity Import
+      const handleImportSingle = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const parsed = JSON.parse(e.target.result);
+            if (parsed && !Array.isArray(parsed) && parsed.name) {
+              setNewActivity({
+                ...emptyActivity, 
+                ...parsed, 
+                id: null, 
+                rulesText: parsed.rules ? parsed.rules.join('\n') : ''
+              });
+              alert("Activity loaded into the Maker!");
+            } else if (Array.isArray(parsed) && parsed.length === 1 && parsed[0].name) {
+              setNewActivity({
+                ...emptyActivity, 
+                ...parsed[0], 
+                id: null,
+                rulesText: parsed[0].rules ? parsed[0].rules.join('\n') : ''
+              });
+              alert("Activity loaded into the Maker!");
+            } else {
+              alert("Invalid individual activity file. Please select a single activity JSON.");
+            }
+          } catch (err) {
+            alert("Error reading file.");
+          }
+          event.target.value = null; 
+        };
+        reader.readAsText(file);
+      };
+
+      const handleRestore = () => {
+        if(confirm("Are you sure you want to restore the original ABC Garden database? This will overwrite your custom activities.")) {
+          setRepository(initialGameDatabase);
+        }
+      };
+
+      const filteredRepository = useMemo(() => {
+        if (!searchQuery) return repository;
+        const lowerQ = searchQuery.toLowerCase();
+        return repository.filter(act => 
+          act.name.toLowerCase().includes(lowerQ) ||
+          (act.objective && act.objective.toLowerCase().includes(lowerQ)) ||
+          (act.targets && act.targets.some(t => t.toLowerCase().includes(lowerQ))) ||
+          (act.materials && act.materials.some(m => m.toLowerCase().includes(lowerQ)))
+        );
+      }, [repository, searchQuery]);
+
+
+      const TabButton = ({ id, icon: Icon, label }) => (
+        <button
+          onClick={() => setActiveTab(id)}
+          className={`flex items-center gap-2 px-5 py-3 font-bold rounded-t-xl transition-all border-b-4 ${activeTab === id ? 'bg-white text-[#1E88E5] border-[#1E88E5] shadow-sm' : 'bg-[#f0ece1] text-gray-500 border-transparent hover:bg-[#e6e1d6]'}`}
+        >
+          <Icon /> {label}
+        </button>
+      );
+
+      // Render Forms for Maker / Editor
+      const ActivityForm = ({ formData, setFormData, isEditModal = false, onSubmit, onCancel }) => {
+        
+        // Dynamic Dropdown Logic for the Maker Form
+        const hasIntl = formData.ages.includes('Pre-K') || formData.ages.includes('Kindergarten');
+        const hasAfter = formData.ages.includes('Elementary');
+        const bothSelected = hasIntl && hasAfter;
+        const noneSelected = !hasIntl && !hasAfter;
+
+        let makerCourse = 'none';
+        let makerUnit = 1;
+        if (formData.unit && formData.unit !== 'all') {
+            const firstTag = formData.unit.split(',')[0].trim();
+            const [c, u] = firstTag.split('-');
+            if (c) makerCourse = c;
+            if (u && u !== 'all') makerUnit = Number(u);
+        }
+
+        const handleCourseChange = (e) => {
+            const c = e.target.value;
+            if (c === 'none') setFormData({...formData, unit: 'all'});
+            else setFormData({...formData, unit: `${c}-1`});
+        };
+
+        const handleUnitChange = (e) => {
+            const u = e.target.value;
+            setFormData({...formData, unit: `${makerCourse}-${u}`});
+        };
+
+        const toggleMakerProgram = (prog) => {
+            let newAges = [...formData.ages];
+            if (prog === 'intl') {
+                if (hasIntl) newAges = newAges.filter(a => a !== 'Pre-K' && a !== 'Kindergarten');
+                else newAges.push('Pre-K', 'Kindergarten');
+            } else {
+                if (hasAfter) newAges = newAges.filter(a => a !== 'Elementary');
+                else newAges.push('Elementary');
+            }
+            
+            const nowHasIntl = newAges.includes('Pre-K') || newAges.includes('Kindergarten');
+            const nowHasAfter = newAges.includes('Elementary');
+            let newUnit = formData.unit || 'all';
+            
+            if ((nowHasIntl && nowHasAfter) || (!nowHasIntl && !nowHasAfter)) {
+                newUnit = 'all';
+            } else if (nowHasIntl && !nowHasAfter && makerCourse.startsWith('lb')) {
+                newUnit = 'all';
+            } else if (!nowHasIntl && nowHasAfter && makerCourse.startsWith('st')) {
+                newUnit = 'all';
+            }
+
+            setFormData({...formData, ages: newAges, unit: newUnit});
+        };
+
+        const makerCurriculumOptions = (hasIntl && !hasAfter) ? [
+            { id: 'none', title: 'Generic (No Curriculum)' },
+            { id: 'st1', title: 'Show & Tell 1' },
+            { id: 'st2', title: 'Show & Tell 2' },
+            { id: 'st3', title: 'Show & Tell 3' }
+        ] : (!hasIntl && hasAfter) ? [
+            { id: 'none', title: 'Generic (No Curriculum)' },
+            { id: 'lb1', title: "Let's Begin 1" },
+            { id: 'lb2', title: "Let's Begin 2" }
+        ] : [];
+
+        return (
+          <form onSubmit={onSubmit} className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Activity Name</label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-gray-50 text-sm font-bold text-gray-800" />
+              </div>
+              <div className="flex flex-col gap-2 justify-center">
+                <label className="flex items-center gap-2 cursor-pointer mt-4">
+                  <input type="checkbox" checked={formData.isTwoPlayer} onChange={e => setFormData({...formData, isTwoPlayer: e.target.checked})} className="w-5 h-5 text-[#1E88E5] rounded border-gray-300 focus:ring-[#1E88E5]" />
+                  <span className="text-sm font-bold text-gray-700">Needs 2+ Players (Teacher adapts for 1-on-1)</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-500 uppercase">Min Time (m)</label>
+                <input type="number" min="1" value={formData.minTime} onChange={e => setFormData({...formData, minTime: Number(e.target.value)})} className="p-2 border border-gray-200 rounded outline-none focus:ring-2 focus:ring-[#1E88E5] bg-gray-50 font-bold" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-500 uppercase">Max Time (m)</label>
+                <input type="number" min="1" value={formData.maxTime} onChange={e => setFormData({...formData, maxTime: Number(e.target.value)})} className="p-2 border border-gray-200 rounded outline-none focus:ring-2 focus:ring-[#1E88E5] bg-gray-50 font-bold" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-500 uppercase">Min Students</label>
+                <input type="number" min="1" value={formData.minStudents} onChange={e => setFormData({...formData, minStudents: Number(e.target.value)})} className="p-2 border border-gray-200 rounded outline-none focus:ring-2 focus:ring-[#1E88E5] bg-gray-50 font-bold" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-500 uppercase">Max Students</label>
+                <input type="number" min="1" value={formData.maxStudents} onChange={e => setFormData({...formData, maxStudents: Number(e.target.value)})} className="p-2 border border-gray-200 rounded outline-none focus:ring-2 focus:ring-[#1E88E5] bg-gray-50 font-bold" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Energy Level (1-5)</label>
+                <input type="range" min="1" max="5" value={formData.energy} onChange={e => setFormData({...formData, energy: Number(e.target.value)})} />
+                <div className="text-center text-sm font-bold text-[#1E88E5]">{formData.energy}</div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Prep Needed (0-5)</label>
+                <input type="range" min="0" max="5" value={formData.prep} onChange={e => setFormData({...formData, prep: Number(e.target.value)})} />
+                <div className="text-center text-sm font-bold text-[#1E88E5]">{formData.prep}</div>
+              </div>
+            </div>
+
+            {/* Target Programs using the big toggles */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Target Programs</label>
+              <div className="flex gap-4">
+                <button type="button" onClick={() => toggleMakerProgram('intl')} className={`flex-1 py-3 px-4 rounded-xl text-sm font-black border-2 transition-all ${hasIntl ? 'bg-blue-50 border-[#1E88E5] text-[#1E88E5]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                  International School<br/>
+                  <span className={`text-[10px] ${hasIntl ? 'text-blue-400' : 'text-gray-400'}`}>(Pre-K & K)</span>
+                </button>
+                <button type="button" onClick={() => toggleMakerProgram('after')} className={`flex-1 py-3 px-4 rounded-xl text-sm font-black border-2 transition-all ${hasAfter ? 'bg-blue-50 border-[#1E88E5] text-[#1E88E5]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                  After School<br/>
+                  <span className={`text-[10px] ${hasAfter ? 'text-blue-400' : 'text-gray-400'}`}>(Elementary)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Curriculum Dropdowns */}
+            <div className="flex flex-col gap-2 p-5 bg-[#f8fafc] border border-gray-200 rounded-xl shadow-sm">
+              <label className="text-xs font-bold text-[#1E88E5] uppercase tracking-wider flex items-center gap-2"><BookOpenIcon className="w-4 h-4"/> Target Curriculum & Unit</label>
+              {(bothSelected || noneSelected) ? (
+                <div className="text-sm font-bold text-gray-500 bg-white p-4 rounded-lg border border-gray-200 text-center">
+                  {bothSelected ? "Select only ONE program above to assign a specific textbook." : "Select a program above to unlock textbooks."}
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-4 mt-1">
+                  <div className="flex-1">
+                     <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Course</label>
+                     <select value={makerCourse} onChange={handleCourseChange} className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-white text-sm font-bold shadow-sm">
+                        {makerCurriculumOptions.map(opt => <option key={opt.id} value={opt.id}>{opt.title}</option>)}
+                     </select>
+                  </div>
+                  {makerCourse !== 'none' && (
+                    <div className="flex-1 animate-fade-in">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Unit</label>
+                      <select value={makerUnit} onChange={handleUnitChange} className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-white text-sm font-bold shadow-sm">
+                        {masterCurriculum[makerCourse].units.map(u => (
+                          <option key={u.id} value={u.id}>{u.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Learning Targets</label>
+              <div className="flex flex-wrap gap-2">
+                {targetOptions.map(opt => (
+                  <button type="button" key={opt} onClick={() => toggleFormArray(formData, setFormData, 'targets', opt)} className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors ${formData.targets.includes(opt) ? 'bg-blue-50 border-[#1E88E5] text-[#1E88E5]' : 'bg-white border-gray-200 text-gray-500'}`}>{opt}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Materials Used</label>
+              <div className="flex flex-wrap gap-2">
+                {materialOptions.map(opt => (
+                  <button type="button" key={opt} onClick={() => toggleFormArray(formData, setFormData, 'materials', opt)} className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors ${formData.materials.includes(opt) ? 'bg-blue-50 border-[#1E88E5] text-[#1E88E5]' : 'bg-white border-gray-200 text-gray-500'}`}>{opt}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Learning Objective</label>
+              <textarea value={formData.objective} onChange={e => setFormData({...formData, objective: e.target.value})} rows="2" className="p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-gray-50 text-sm font-medium" placeholder="What will the students learn?"></textarea>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Room Setup</label>
+              <textarea value={formData.setup} onChange={e => setFormData({...formData, setup: e.target.value})} rows="2" className="p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-gray-50 text-sm font-medium" placeholder="How should the desks/cards be arranged?"></textarea>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Rules / How to Play (One rule per line)</label>
+              <textarea value={formData.rulesText} onChange={e => setFormData({...formData, rulesText: e.target.value})} rows="4" className="p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-gray-50 text-sm font-medium leading-relaxed" placeholder="Line 1: Divide the class into teams.&#10;Line 2: The teacher says a word..."></textarea>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teacher Script</label>
+                <textarea value={formData.teacherScript} onChange={e => setFormData({...formData, teacherScript: e.target.value})} rows="3" className="p-3 border border-blue-200 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-blue-50 text-sm font-medium" placeholder={`"Are you ready? [Target Question]"`}></textarea>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Student Script</label>
+                <textarea value={formData.studentScript} onChange={e => setFormData({...formData, studentScript: e.target.value})} rows="3" className="p-3 border border-green-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 bg-green-50 text-sm font-medium" placeholder={`"[Target Answer]!"`}></textarea>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              {isEditModal && <button type="button" onClick={onCancel} className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>}
+              <button type="submit" className="flex items-center gap-2 px-6 py-2.5 bg-[#1E88E5] hover:bg-blue-600 text-white font-bold rounded-lg shadow-sm transition-colors">
+                 {isEditModal ? 'Save Changes' : <><PlusCircleIcon /> Create Activity</>}
+              </button>
+            </div>
+          </form>
+        );
+      };
+
+      return (
+        <div className="min-h-screen bg-[#FAF8F5] p-4 sm:p-8 flex justify-center">
+          <div className="max-w-7xl w-full flex flex-col gap-6">
+            
+            {/* Header matches the planners' layout */}
+            <div className="mb-2 flex flex-col md:flex-row justify-between items-center gap-4 no-print border-b-2 border-gray-200 pb-6">
+              <div>
+                <div className="flex items-center gap-3">
+                  <img
+                    src="abc-horizontal-block-tilted-mono.png"
+                    alt="ABC Garden Logo"
+                    className="h-12 w-auto object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
+                  />
+                  <h1 className="text-3xl font-black hidden text-gray-800">ABC Garden</h1>
+                  <span className="text-2xl font-black text-gray-800 border-l-2 border-gray-200 pl-3 ml-1 hidden sm:block">Activity Engine</span>
+                </div>
+                <p className="text-gray-500 font-bold ml-1 mt-1">Intelligent Lesson Assembly & Database</p>
+              </div>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex gap-2 border-b-4 border-gray-200 mb-2 overflow-x-auto">
+              <TabButton id="generator" icon={SparklesIcon} label="Generator" />
+              <TabButton id="maker" icon={PlusCircleIcon} label="Activity Maker" />
+              <TabButton id="repository" icon={DatabaseIcon} label="Repository" />
+            </div>
+
+            {/* TAB 1: GENERATOR */}
+            {activeTab === 'generator' && (
+              <div className="flex flex-col lg:flex-row gap-8 mt-2">
+                {/* --- LEFT COLUMN: CONTROLS --- */}
+                <div className="w-full lg:w-1/3 flex flex-col gap-6">
+                  
+                  {/* PROGRAM GROUP TOGGLE */}
+                  <div className="bg-white p-1.5 rounded-xl flex border border-gray-200 shadow-sm">
+                    <button 
+                      className={`flex-1 py-3 text-sm font-black rounded-lg transition-all ${programGroup === 'international' ? 'bg-[#1E88E5] text-white shadow-md transform scale-[1.02]' : 'text-gray-500 hover:bg-gray-50'}`}
+                      onClick={() => setProgramGroup('international')}
+                    >
+                      International School<br/>
+                      <span className={`text-[10px] font-bold ${programGroup === 'international' ? 'text-blue-100' : 'text-gray-400'}`}>(Pre-K & K)</span>
+                    </button>
+                    <button 
+                      className={`flex-1 py-3 text-sm font-black rounded-lg transition-all ${programGroup === 'afterschool' ? 'bg-[#1E88E5] text-white shadow-md transform scale-[1.02]' : 'text-gray-500 hover:bg-gray-50'}`}
+                      onClick={() => setProgramGroup('afterschool')}
+                    >
+                      After School<br/>
+                      <span className={`text-[10px] font-bold ${programGroup === 'afterschool' ? 'text-blue-100' : 'text-gray-400'}`}>(Elementary)</span>
+                    </button>
+                  </div>
+
+                  {/* CURRICULUM INTEGRATION */}
+                  <div className="bg-blue-50 p-5 rounded-2xl shadow-sm border border-blue-200">
+                    <div className="flex items-center gap-2 mb-4 border-b border-blue-100 pb-2">
+                      <BookOpenIcon />
+                      <h2 className="text-lg font-black text-[#1E88E5]">Target Curriculum</h2>
+                    </div>
+                    
+                    <label className="text-xs font-black text-[#1E88E5] uppercase tracking-wider block mb-2">Select Course (Optional)</label>
+                    <select 
+                      value={selectedCurriculum} 
+                      onChange={(e) => { setSelectedCurriculum(e.target.value); setSelectedUnit(1); }}
+                      className="w-full p-3 border border-blue-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#1E88E5] outline-none font-bold mb-3 shadow-sm text-gray-800 cursor-pointer"
+                    >
+                      {curriculumOptions.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.title}</option>
+                      ))}
+                    </select>
+                    
+                    {selectedCurriculum !== 'none' && (
+                      <div className="animate-fade-in mt-1">
+                        <label className="text-xs font-black text-[#1E88E5] uppercase tracking-wider block mb-2">Target Unit</label>
+                        <select 
+                          value={selectedUnit} 
+                          onChange={(e) => setSelectedUnit(Number(e.target.value))}
+                          className="w-full p-3 border border-blue-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#1E88E5] outline-none font-bold shadow-sm text-gray-800 cursor-pointer"
+                        >
+                          {masterCurriculum[selectedCurriculum].units.map(u => (
+                            <option key={u.id} value={u.id}>{u.title}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                    <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
+                      <ZapIcon />
+                      <h2 className="text-lg font-black text-gray-800">Classroom Metrics</h2>
+                    </div>
+                    
+                    {/* SLIDERS */}
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Duration</label>
+                          <span className="text-sm font-black text-[#1E88E5]">{duration} mins</span>
+                        </div>
+                        <input type="range" min="5" max="30" step="5" value={duration} onChange={(e) => setDuration(Number(e.target.value))} />
+                        <div className="flex justify-between text-[10px] text-gray-400 font-bold mt-1"><span>5m</span><span>30m</span></div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Students</label>
+                          <span className="text-sm font-black text-[#1E88E5]">{classSize} {classSize === 1 ? 'Student' : 'Students'}</span>
+                        </div>
+                        <input type="range" min="1" max="12" step="1" value={classSize} onChange={(e) => setClassSize(Number(e.target.value))} />
+                        <div className="flex justify-between text-[10px] text-gray-400 font-bold mt-1"><span>1</span><span>12</span></div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Energy Level</label>
+                          <span className="text-sm font-black text-[#1E88E5]">
+                            {energy} - {energy === 1 ? 'Calm/Seated' : energy <= 3 ? 'Moderate' : 'High/Active'}
+                          </span>
+                        </div>
+                        <input type="range" min="1" max="5" step="1" value={energy} onChange={(e) => setEnergy(Number(e.target.value))} />
+                        <div className="flex justify-between text-[10px] text-gray-400 font-bold mt-1"><span>Low</span><span>High</span></div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Prep Time Required</label>
+                          <span className="text-sm font-black text-[#1E88E5]">
+                            {prep} - {prep === 0 ? 'Walk in & Teach' : prep <= 2 ? 'Quick Print/Hide' : 'Extensive Prep'}
+                          </span>
+                        </div>
+                        <input type="range" min="0" max="5" step="1" value={prep} onChange={(e) => setPrep(Number(e.target.value))} />
+                        <div className="flex justify-between text-[10px] text-gray-400 font-bold mt-1"><span>None</span><span>High</span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TOGGLES */}
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                    <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
+                      <TargetIcon />
+                      <h2 className="text-lg font-black text-gray-800">Learning Parameters</h2>
+                    </div>
+
+                    <div className="space-y-5">
+                      {/* Language Targets */}
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">Learning Targets (Multi)</label>
+                        <div className="flex flex-wrap gap-2">
+                          {targetOptions.map(option => (
+                            <button
+                              key={option}
+                              onClick={() => toggleArray(languageTargets, setLanguageTargets, option)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors ${languageTargets.includes(option) ? 'bg-blue-50 border-[#1E88E5] text-[#1E88E5]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Materials */}
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">Available Materials (Multi)</label>
+                        <div className="flex flex-wrap gap-2">
+                          {materialOptions.map(option => (
+                            <button
+                              key={option}
+                              onClick={() => toggleArray(materials, setMaterials, option)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors ${materials.includes(option) ? 'bg-blue-50 border-[#1E88E5] text-[#1E88E5]' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3">
+                    <button 
+                      onClick={() => generateLesson(false)}
+                      className="w-full py-4 bg-[#1E88E5] hover:bg-blue-600 text-white rounded-2xl font-black text-lg shadow-sm transition-transform active:scale-95 flex justify-center items-center gap-2"
+                    >
+                      <SparklesIcon /> Generate Activity
+                    </button>
+                    <button 
+                      onClick={() => generateLesson(true)}
+                      className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-2xl font-black text-sm shadow-sm transition-transform active:scale-95 flex justify-center items-center gap-2"
+                    >
+                      <DiceIcon /> Surprise Me!
+                    </button>
+                  </div>
+                </div>
+
+                {/* --- RIGHT COLUMN: OUTPUT --- */}
+                <div className="w-full lg:w-2/3">
+                  {isGenerating ? (
+                    <div className="h-full w-full bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center min-h-[500px]">
+                      <div className="w-12 h-12 border-4 border-gray-200 border-t-[#1E88E5] rounded-full animate-spin mb-4"></div>
+                      <p className="text-gray-500 font-bold animate-pulse">Calculating optimal activity...</p>
+                    </div>
+                  ) : generatedActivity ? (
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden chip-enter">
+                      
+                      {/* Activity Header */}
+                      <div className="bg-[#f8fafc] border-b border-gray-200 p-6 sm:p-8">
+                        <div className="flex justify-between items-start mb-2">
+                          <h2 className="text-3xl font-black text-gray-800 leading-tight">{generatedActivity.name}</h2>
+                          <div className="bg-blue-100 text-[#1E88E5] text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
+                            {generatedActivity.minTime}-{generatedActivity.maxTime} Mins
+                          </div>
+                        </div>
+                        
+                        {/* Meta Tags */}
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          <span className="flex items-center gap-1 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold px-2 py-1 rounded shadow-sm">
+                            <UsersIcon /> {generatedActivity.minStudents}-{generatedActivity.maxStudents} Students
+                          </span>
+                          <span className="flex items-center gap-1 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold px-2 py-1 rounded shadow-sm">
+                            <ZapIcon /> Energy: {generatedActivity.energy}/5
+                          </span>
+                          <span className="flex items-center gap-1 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold px-2 py-1 rounded shadow-sm">
+                            <ClockIcon /> Prep: {generatedActivity.prep}/5
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Activity Body */}
+                      <div className="p-6 sm:p-8 space-y-8">
+
+                        {/* 1-on-1 Adaptation Note */}
+                        {classSize === 1 && generatedActivity.isTwoPlayer && (
+                          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+                            <div className="bg-orange-100 p-2 rounded-full mt-0.5">
+                              <UsersIcon className="w-5 h-5 text-orange-600" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-orange-800">1-on-1 Class Adaptation</h4>
+                              <p className="text-xs font-bold text-orange-700 mt-1">
+                                This is normally a multiplayer activity. Because your class size is set to 1, the teacher will actively participate and act as the student's partner.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Objective & Materials */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
+                              <TargetIcon /> Learning Objective
+                            </h3>
+                            <p className="text-gray-700 font-medium leading-relaxed">{generatedActivity.objective}</p>
+                            <div className="mt-2 flex flex-wrap gap-1">
+                               {generatedActivity.targets && generatedActivity.targets.map(t => (
+                                  <span key={t} className="text-[9px] bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded uppercase">{t}</span>
+                               ))}
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
+                              <BoxIcon /> Materials Needed
+                            </h3>
+                            <ul className="space-y-1">
+                              {generatedActivity.materials && generatedActivity.materials.map(m => (
+                                <li key={m} className="text-gray-700 font-medium flex items-center gap-2 before:content-[''] before:w-1.5 before:h-1.5 before:bg-blue-400 before:rounded-full">{m}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+
+                        {/* Curriculum Integration Block */}
+                        {generatedActivity.curriculumData && (
+                          <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm">
+                             <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-3 flex items-center gap-2">
+                               <BookOpenIcon /> Integration: {generatedActivity.curriculumData.course} - {generatedActivity.curriculumData.unit}
+                             </h3>
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <div>
+                                 <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Target Vocabulary</span>
+                                 <p className="text-sm text-gray-800 font-bold">{generatedActivity.curriculumData.vocab}</p>
+                               </div>
+                               <div>
+                                 <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Target Structure</span>
+                                 <p className="text-sm text-gray-800 font-bold">{generatedActivity.curriculumData.structure}</p>
+                               </div>
+                             </div>
+                          </div>
+                        )}
+
+                        <hr className="border-gray-100" />
+
+                        {/* Setup & Rules */}
+                        <div>
+                          <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <DiceIcon /> Setup & Rules
+                          </h3>
+                          <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                            <h4 className="font-bold text-gray-800 mb-1 text-sm">Room Setup:</h4>
+                            <p className="text-gray-700 font-medium text-sm mb-4">{generatedActivity.setup}</p>
+                            
+                            <h4 className="font-bold text-gray-800 mb-2 text-sm">How to Play:</h4>
+                            <ol className="space-y-2 list-decimal list-inside">
+                              {generatedActivity.rules && generatedActivity.rules.map((rule, idx) => (
+                                <li key={idx} className="text-gray-700 font-medium text-sm leading-relaxed">{rule}</li>
+                              ))}
+                            </ol>
+                          </div>
+                        </div>
+
+                        {/* Scripts */}
+                        <div>
+                          <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <BookOpenIcon /> Interaction Script
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="border-l-4 border-blue-400 pl-4 py-1">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Teacher Model</p>
+                              <p className="text-gray-800 font-black italic">"{generatedActivity.teacherScript ? generatedActivity.teacherScript.replace(/"/g, '') : ''}"</p>
+                            </div>
+                            <div className="border-l-4 border-green-400 pl-4 py-1">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Student Target Response</p>
+                              <p className="text-gray-800 font-black italic">"{generatedActivity.studentScript ? generatedActivity.studentScript.replace(/"/g, '') : ''}"</p>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: ACTIVITY MAKER */}
+            {activeTab === 'maker' && (
+              <div className="flex flex-col gap-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 shadow-sm">
+                  <h2 className="text-xl font-black text-[#1E88E5] mb-2">Curriculum Injection Cheat Sheet</h2>
+                  <p className="text-sm text-gray-700 mb-4">
+                    To make your new activity work magically with the <strong>Target Curriculum</strong> dropdown in the Generator, use these exact placeholders in your <strong>Teacher & Student Scripts</strong>:
+                  </p>
+                  <ul className="text-sm text-gray-800 space-y-2 font-medium bg-white p-4 rounded-xl border border-blue-100">
+                    <li><span className="font-black font-mono text-pink-600 bg-pink-50 px-2 py-0.5 rounded border border-pink-100">[Target Question]</span> Automatically inserts the question from the selected unit (e.g. <em>"What color is it?"</em>).</li>
+                    <li><span className="font-black font-mono text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-100">[Target Answer]</span> Automatically inserts the answer from the selected unit (e.g. <em>"It's blue."</em>).</li>
+                    <li><span className="font-black font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">[Target Language]</span> Inserts the full structure without splitting Q&A (Great for commands).</li>
+                    <li><span className="font-black font-mono text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">[Target Vocab]</span> Inserts a random vocabulary word from the unit list (e.g. <em>"apple"</em>).</li>
+                    <li><span className="font-black font-mono text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100">[Vocab 1]</span>, <span className="font-black font-mono text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100">[Vocab 2]</span> Will grab two <em>different</em> vocabulary words (Great for memory games).</li>
+                  </ul>
+                </div>
+
+                <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-6 md:p-8">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
+                      <PlusCircleIcon /> Add Activity to Database
+                    </h2>
+                    <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors cursor-pointer shadow-sm whitespace-nowrap">
+                      <UploadIcon />
+                      Import Individual JSON
+                      <input type="file" accept=".json" onChange={handleImportSingle} className="hidden" />
+                    </label>
+                  </div>
+                  <ActivityForm formData={newActivity} setFormData={setNewActivity} onSubmit={handleSaveActivity} />
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: REPOSITORY */}
+            {activeTab === 'repository' && (
+              <div className="flex flex-col gap-6">
+                
+                {/* Repository Controls */}
+                <div className="bg-white p-4 sm:p-6 border-b border-gray-200 shadow-sm rounded-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <DatabaseIcon />
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800">Database Management</h2>
+                      <p className="text-sm font-medium text-gray-500">{repository.length} Total Activities</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors cursor-pointer shadow-sm">
+                      <UploadIcon />
+                      Import DB
+                      <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+                    </label>
+                    <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm">
+                      <DownloadIcon /> Export DB
+                    </button>
+                    <button onClick={handleRestore} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors shadow-sm ml-2" title="Restore back to the default ABC Garden activities.">
+                      <RefreshIcon /> Restore Defaults
+                    </button>
+                  </div>
+                </div>
+
+                {/* Repository Table */}
+                <div className="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden">
+                  <div className="bg-gray-50 border-b border-gray-200 p-4">
+                    <div className="relative w-full max-w-md">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <SearchIcon />
+                      </div>
+                      <input 
+                        type="text" 
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        placeholder="Search by name, objective, tags..." 
+                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E88E5] bg-white text-gray-900"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[800px]">
+                      <thead>
+                        <tr className="bg-white border-b border-gray-200">
+                          <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider w-1/3">Activity Info</th>
+                          <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Metrics</th>
+                          <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Tags & Params</th>
+                          <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredRepository.length > 0 ? (
+                          filteredRepository.map(act => (
+                            <tr key={act.id} className="hover:bg-gray-50 border-b border-gray-100 transition-colors">
+                              <td className="p-4">
+                                <div className="text-base font-black text-gray-800">{act.name} {act.isTwoPlayer && <UsersIcon className="inline w-3 h-3 text-orange-500 -mt-1 ml-1" title="Multiplayer game"/>}</div>
+                                <div className="text-xs text-gray-500 mt-1 line-clamp-2 font-medium leading-relaxed">{act.objective}</div>
+                              </td>
+                              <td className="p-4 text-center">
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="text-[11px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded whitespace-nowrap"><ClockIcon className="inline w-3 h-3 mr-1"/>{act.minTime}-{act.maxTime}m</span>
+                                  <span className="text-[11px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded whitespace-nowrap"><UsersIcon className="inline w-3 h-3 mr-1"/>{act.minStudents}-{act.maxStudents} St</span>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <div className="flex flex-col items-center gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase text-orange-600 bg-orange-50 border border-orange-200 px-1.5 rounded" title="Energy Level">E: {act.energy}</span>
+                                    <span className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 border border-blue-200 px-1.5 rounded" title="Prep Time">P: {act.prep}</span>
+                                  </div>
+                                  <div className="flex flex-wrap justify-center gap-1">
+                                    {act.ages && act.ages.map(tag => <span key={tag} className="text-[9px] bg-gray-200 text-gray-600 font-bold px-1 rounded uppercase whitespace-nowrap">{tag}</span>)}
+                                    {act.targets && act.targets.map(tag => <span key={tag} className="text-[9px] bg-green-100 text-green-700 border border-green-200 font-bold px-1 rounded uppercase whitespace-nowrap">{tag}</span>)}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-4 text-center">
+                                <div className="flex justify-center items-center gap-1">
+                                  <button onClick={() => handleEditActivity(act)} className="p-2 text-gray-500 hover:text-[#1E88E5] hover:bg-blue-50 rounded-lg transition-colors" title="Edit Activity">
+                                    <EditIcon />
+                                  </button>
+                                  <button onClick={() => handleExportSingle(act)} className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Export Single Activity JSON">
+                                    <DownloadIcon />
+                                  </button>
+                                  <button onClick={() => removeActivity(act.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Activity">
+                                    <Trash2Icon />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="4" className="p-12 text-center text-gray-500 font-bold bg-white">
+                              No activities found matching "{searchQuery}"
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+
+          {/* --- EDIT MODAL --- */}
+          {editingActivityId && (
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex justify-center items-center p-4 sm:p-8 z-50 modal-enter backdrop-blur-sm">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+                <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50 shrink-0">
+                  <h2 className="text-xl font-black text-gray-800 flex items-center gap-2"><EditIcon /> Edit Activity Details</h2>
+                  <button onClick={() => setEditingActivityId(null)} className="p-1 text-gray-400 hover:text-gray-600 transition-colors"><XIcon /></button>
+                </div>
+                <div className="p-6 overflow-y-auto">
+                  <ActivityForm formData={newActivity} setFormData={setNewActivity} isEditModal={true} onSubmit={handleSaveActivity} onCancel={() => setEditingActivityId(null)} />
+                </div>
+              </div>
+            </div>
+          )}
+          
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
