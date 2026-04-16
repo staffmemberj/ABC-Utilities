@@ -78,7 +78,6 @@
     const BookOpenIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
     const BoxIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>;
     
-    // Additional Icons for new tabs
     const DatabaseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>;
     const PlusCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>;
     const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
@@ -88,6 +87,7 @@
     const Trash2Icon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
     const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
     const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    const EyeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
 
     // --- CURRICULUM DATABASE ---
     const masterCurriculum = {
@@ -178,7 +178,7 @@
           { id: 2, title: "Unit 2: Colors", vocab: "red, blue, yellow, green, brown, purple, orange, pink, black, white", structure: "What color is it? It's purple." },
           { id: 3, title: "Unit 3: Shapes", vocab: "circle, square, triangle, heart, star, diamond, oval, rectangle", structure: "Is it a star? Yes, it is." },
           { id: 4, title: "Unit 4: Numbers", vocab: "Numbers 1-10", structure: "How many cats? 6 cats." },
-          { id: 5, title: "Unit 5: Animals", vocab: "dog, cat, bird, cow, rabbit, duck", structure: "How many cows? 8 cows." },
+          { id: 5, title: "Unit 5: Animals", vocab: "dog, cat, bird, cow, rabbit, cow, rabbit, duck", structure: "How many cows? 8 cows." },
           { id: 6, title: "Unit 6: Food", vocab: "ice cream, pizza, cake, chicken, milk, fish, bread, rice", structure: "Do you like fish? Yes, I do." },
           { id: 7, title: "Unit 7: My Body", vocab: "head, shoulders, knees, toes, eyes, ears, mouth, nose", structure: "What can you do? I can touch my eyes." },
           { id: 8, title: "Unit 8: I Can", vocab: "ride a bicycle, sing a song, fly a kite, bounce a ball, swim, smile, wink, dance", structure: "Can you dance? Yes, I can." }
@@ -187,7 +187,7 @@
     };
 
     // --- INITIAL DATABASE OF ACTIVITIES ---
-    const initialGameDatabase = [
+    const initialGameLibrary = [
       {
         id: 'g1', name: 'Flashcard Safari',
         isTwoPlayer: false,
@@ -435,7 +435,7 @@
         objective: 'Listen for the target and race to identify it on the board.',
         setup: 'Stick flashcards or write words randomly all over the whiteboard. Divide the class into two lines facing the board.',
         rules: [
-          'Give the first student in each line a marker (or fly swatter).',
+          'Give the first student in line a marker (or fly swatter).',
           'Call out the target structure.',
           'The two students race to the board and tap the correct image. First one gets a point.'
         ],
@@ -821,11 +821,9 @@
       }
     ];
 
-    const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-
     const App = () => {
       // --- TAB STATE ---
-      const [activeTab, setActiveTab] = useState('generator'); // generator, maker, repository
+      const [activeTab, setActiveTab] = useState('generator'); // generator, create, library
 
       // --- STATE FOR SLIDERS (Generator Tab) ---
       const [duration, setDuration] = useState(30); // 5 to 30 mins
@@ -846,6 +844,9 @@
       const [generatedActivity, setGeneratedActivity] = useState(null);
       const [isGenerating, setIsGenerating] = useState(false);
 
+      // Preview State (Library Tab)
+      const [previewActivity, setPreviewActivity] = useState(null);
+
       // Options
       const ageOptions = ['Pre-K', 'Kindergarten', 'Elementary'];
       const targetOptions = ['Phonics / Alphabet', 'Target Vocabulary', 'Sentence Structures / Grammar', 'Listening / Comprehension', 'Speaking / Production'];
@@ -863,18 +864,18 @@
         { id: 'lb2', title: "Let's Begin 2" }
       ];
 
-      // --- STATE FOR REPOSITORY ---
-      const [repository, setRepository] = useState(() => {
-        const saved = localStorage.getItem('abc_activity_repository');
-        return saved ? JSON.parse(saved) : initialGameDatabase;
+      // --- STATE FOR LIBRARY ---
+      const [library, setLibrary] = useState(() => {
+        const saved = localStorage.getItem('abc_activity_library');
+        return saved ? JSON.parse(saved) : initialGameLibrary;
       });
       const [searchQuery, setSearchQuery] = useState('');
 
       useEffect(() => {
-        localStorage.setItem('abc_activity_repository', JSON.stringify(repository));
-      }, [repository]);
+        localStorage.setItem('abc_activity_library', JSON.stringify(library));
+      }, [library]);
 
-      // --- STATE FOR ACTIVITY MAKER & EDITING ---
+      // --- STATE FOR CREATE & EDITING ---
       const emptyActivity = {
         name: '', isTwoPlayer: false, minTime: 5, maxTime: 30, minStudents: 1, maxStudents: 12, energy: 3, prep: 2,
         ages: [], targets: [], materials: [], unit: 'all',
@@ -927,10 +928,10 @@
           if (isSurprise) {
             // Pick any game randomly, but try to respect the unit if one is chosen
             if (targetUnitStr) {
-                possibleMatches = repository.filter(game => matchesUnit(game.unit, targetUnitStr));
-                if (possibleMatches.length === 0) possibleMatches = [...repository]; // fallback
+                possibleMatches = library.filter(game => matchesUnit(game.unit, targetUnitStr));
+                if (possibleMatches.length === 0) possibleMatches = [...library]; // fallback
             } else {
-                possibleMatches = [...repository];
+                possibleMatches = [...library];
             }
           } else {
             let highestScore = -100;
@@ -939,7 +940,7 @@
               effectiveMaterials.push('Nothing (No Props)');
             }
 
-            repository.forEach(game => {
+            library.forEach(game => {
               if (classSize < game.minStudents || classSize > game.maxStudents) return;
               if (duration < game.minTime) return; 
               
@@ -1071,7 +1072,7 @@
       }, []);
 
 
-      // --- REPOSITORY ACTIONS ---
+      // --- LIBRARY ACTIONS ---
       const handleSaveActivity = (e) => {
         e.preventDefault();
         if (!newActivity.name) {
@@ -1088,17 +1089,18 @@
         delete activityToSave.rulesText;
 
         if (editingActivityId) {
-          setRepository(repository.map(act => act.id === editingActivityId ? activityToSave : act));
+          setLibrary(library.map(act => act.id === editingActivityId ? activityToSave : act));
           setEditingActivityId(null);
         } else {
-          setRepository([...repository, activityToSave]);
-          alert("Activity added to the repository!");
+          setLibrary([...library, activityToSave]);
+          alert("Activity added to the library!");
         }
         setNewActivity(emptyActivity);
-        if(editingActivityId) setActiveTab('repository');
+        if(editingActivityId) setActiveTab('library');
       };
 
-      const handleEditActivity = (act) => {
+      const handleEditActivity = (e, act) => {
+        e.stopPropagation();
         setNewActivity({
           ...act,
           rulesText: act.rules ? act.rules.join('\n') : '',
@@ -1110,18 +1112,19 @@
         setEditingActivityId(act.id);
       };
 
-      const removeActivity = (id) => {
+      const handleRemoveActivity = (e, id) => {
+        e.stopPropagation();
         if(confirm("Are you sure you want to delete this activity?")) {
-          setRepository(repository.filter(a => a.id !== id));
+          setLibrary(library.filter(a => a.id !== id));
         }
       };
 
       // Entire Database Export
       const handleExport = () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(repository, null, 2));
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(library, null, 2));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "abc_activity_database.json");
+        downloadAnchorNode.setAttribute("download", "abc_activity_library.json");
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
@@ -1136,8 +1139,8 @@
           try {
             const parsed = JSON.parse(e.target.result);
             if (Array.isArray(parsed)) {
-              setRepository(parsed);
-              alert("Repository imported successfully!");
+              setLibrary(parsed);
+              alert("Activity Library imported successfully!");
             } else {
               alert("Invalid file format. Expected an array of activities.");
             }
@@ -1150,7 +1153,8 @@
       };
 
       // Single Activity Export
-      const handleExportSingle = (act) => {
+      const handleExportSingle = (e, act) => {
+        e.stopPropagation();
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(act, null, 2));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
@@ -1175,7 +1179,7 @@
                 id: null, 
                 rulesText: parsed.rules ? parsed.rules.join('\n') : ''
               });
-              alert("Activity loaded into the Maker!");
+              alert("Activity loaded into Create!");
             } else if (Array.isArray(parsed) && parsed.length === 1 && parsed[0].name) {
               setNewActivity({
                 ...emptyActivity, 
@@ -1183,7 +1187,7 @@
                 id: null,
                 rulesText: parsed[0].rules ? parsed[0].rules.join('\n') : ''
               });
-              alert("Activity loaded into the Maker!");
+              alert("Activity loaded into Create!");
             } else {
               alert("Invalid individual activity file. Please select a single activity JSON.");
             }
@@ -1196,21 +1200,21 @@
       };
 
       const handleRestore = () => {
-        if(confirm("Are you sure you want to restore the original ABC Garden database? This will overwrite your custom activities.")) {
-          setRepository(initialGameDatabase);
+        if(confirm("Are you sure you want to restore the original ABC Garden library? This will overwrite your custom activities.")) {
+          setLibrary(initialGameLibrary);
         }
       };
 
-      const filteredRepository = useMemo(() => {
-        if (!searchQuery) return repository;
+      const filteredLibrary = useMemo(() => {
+        if (!searchQuery) return library;
         const lowerQ = searchQuery.toLowerCase();
-        return repository.filter(act => 
+        return library.filter(act => 
           act.name.toLowerCase().includes(lowerQ) ||
           (act.objective && act.objective.toLowerCase().includes(lowerQ)) ||
           (act.targets && act.targets.some(t => t.toLowerCase().includes(lowerQ))) ||
           (act.materials && act.materials.some(m => m.toLowerCase().includes(lowerQ)))
         );
-      }, [repository, searchQuery]);
+      }, [library, searchQuery]);
 
 
       const TabButton = ({ id, icon: Icon, label }) => (
@@ -1222,10 +1226,10 @@
         </button>
       );
 
-      // Render Forms for Maker / Editor
+      // Render Forms for Create / Editor
       const ActivityForm = ({ formData, setFormData, isEditModal = false, onSubmit, onCancel }) => {
         
-        // Dynamic Dropdown Logic for the Maker Form
+        // Dynamic Dropdown Logic for the Create Form
         const hasIntl = formData.ages.includes('Pre-K') || formData.ages.includes('Kindergarten');
         const hasAfter = formData.ages.includes('Elementary');
         const bothSelected = hasIntl && hasAfter;
@@ -1432,6 +1436,135 @@
         );
       };
 
+      // Common Component for displaying the Activity
+      const ActivityCard = ({ activity, currentClassSize }) => (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden chip-enter h-full flex flex-col">
+          {/* Activity Header */}
+          <div className="bg-[#f8fafc] border-b border-gray-200 p-6 sm:p-8">
+            <div className="flex justify-between items-start mb-2">
+              <h2 className="text-3xl font-black text-gray-800 leading-tight">{activity.name}</h2>
+              <div className="bg-blue-100 text-[#1E88E5] text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
+                {activity.minTime}-{activity.maxTime} Mins
+              </div>
+            </div>
+            
+            {/* Meta Tags */}
+            <div className="flex flex-wrap gap-2 mt-4">
+              <span className="flex items-center gap-1 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold px-2 py-1 rounded shadow-sm">
+                <UsersIcon /> {activity.minStudents}-{activity.maxStudents} Students
+              </span>
+              <span className="flex items-center gap-1 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold px-2 py-1 rounded shadow-sm">
+                <ZapIcon /> Energy: {activity.energy}/5
+              </span>
+              <span className="flex items-center gap-1 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold px-2 py-1 rounded shadow-sm">
+                <ClockIcon /> Prep: {activity.prep}/5
+              </span>
+            </div>
+          </div>
+
+          {/* Activity Body */}
+          <div className="p-6 sm:p-8 space-y-8 flex-1">
+
+            {/* 1-on-1 Adaptation Note */}
+            {currentClassSize === 1 && activity.isTwoPlayer && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+                <div className="bg-orange-100 p-2 rounded-full mt-0.5">
+                  <UsersIcon className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-orange-800">1-on-1 Class Adaptation</h4>
+                  <p className="text-xs font-bold text-orange-700 mt-1">
+                    This is normally a multiplayer activity. Because your class size is set to 1, the teacher will actively participate and act as the student's partner.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Objective & Materials */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <TargetIcon /> Learning Objective
+                </h3>
+                <p className="text-gray-700 font-medium leading-relaxed">{activity.objective}</p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                    {activity.targets && activity.targets.map(t => (
+                      <span key={t} className="text-[9px] bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded uppercase">{t}</span>
+                    ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <BoxIcon /> Materials Needed
+                </h3>
+                <ul className="space-y-1">
+                  {activity.materials && activity.materials.map(m => (
+                    <li key={m} className="text-gray-700 font-medium flex items-center gap-2 before:content-[''] before:w-1.5 before:h-1.5 before:bg-blue-400 before:rounded-full">{m}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Curriculum Integration Block */}
+            {activity.curriculumData && (
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm">
+                  <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <BookOpenIcon /> Integration: {activity.curriculumData.course} - {activity.curriculumData.unit}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Target Vocabulary</span>
+                      <p className="text-sm text-gray-800 font-bold">{activity.curriculumData.vocab}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Target Structure</span>
+                      <p className="text-sm text-gray-800 font-bold">{activity.curriculumData.structure}</p>
+                    </div>
+                  </div>
+              </div>
+            )}
+
+            <hr className="border-gray-100" />
+
+            {/* Setup & Rules */}
+            <div>
+              <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
+                <DiceIcon /> Setup & Rules
+              </h3>
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                <h4 className="font-bold text-gray-800 mb-1 text-sm">Room Setup:</h4>
+                <p className="text-gray-700 font-medium text-sm mb-4">{activity.setup}</p>
+                
+                <h4 className="font-bold text-gray-800 mb-2 text-sm">How to Play:</h4>
+                <ol className="space-y-2 list-decimal list-inside">
+                  {activity.rules && activity.rules.map((rule, idx) => (
+                    <li key={idx} className="text-gray-700 font-medium text-sm leading-relaxed">{rule}</li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+
+            {/* Scripts */}
+            <div>
+              <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
+                <BookOpenIcon /> Interaction Script
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="border-l-4 border-blue-400 pl-4 py-1">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Teacher Model</p>
+                  <p className="text-gray-800 font-black italic">"{activity.teacherScript ? activity.teacherScript.replace(/"/g, '') : ''}"</p>
+                </div>
+                <div className="border-l-4 border-green-400 pl-4 py-1">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Student Target Response</p>
+                  <p className="text-gray-800 font-black italic">"{activity.studentScript ? activity.studentScript.replace(/"/g, '') : ''}"</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      );
+
       return (
         <div className="min-h-screen bg-[#FAF8F5] p-4 sm:p-8 flex justify-center">
           <div className="max-w-7xl w-full flex flex-col gap-6">
@@ -1459,8 +1592,8 @@
             {/* Navigation Tabs */}
             <div className="flex gap-2 border-b-4 border-gray-200 mb-2 overflow-x-auto">
               <TabButton id="generator" icon={SparklesIcon} label="Generator" />
-              <TabButton id="maker" icon={PlusCircleIcon} label="Activity Maker" />
-              <TabButton id="repository" icon={DatabaseIcon} label="Repository" />
+              <TabButton id="create" icon={PlusCircleIcon} label="Create" />
+              <TabButton id="library" icon={DatabaseIcon} label="Library" />
             </div>
 
             {/* TAB 1: GENERATOR */}
@@ -1637,139 +1770,14 @@
                       <p className="text-gray-500 font-bold animate-pulse">Calculating optimal activity...</p>
                     </div>
                   ) : generatedActivity ? (
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden chip-enter">
-                      
-                      {/* Activity Header */}
-                      <div className="bg-[#f8fafc] border-b border-gray-200 p-6 sm:p-8">
-                        <div className="flex justify-between items-start mb-2">
-                          <h2 className="text-3xl font-black text-gray-800 leading-tight">{generatedActivity.name}</h2>
-                          <div className="bg-blue-100 text-[#1E88E5] text-xs font-black px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
-                            {generatedActivity.minTime}-{generatedActivity.maxTime} Mins
-                          </div>
-                        </div>
-                        
-                        {/* Meta Tags */}
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          <span className="flex items-center gap-1 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold px-2 py-1 rounded shadow-sm">
-                            <UsersIcon /> {generatedActivity.minStudents}-{generatedActivity.maxStudents} Students
-                          </span>
-                          <span className="flex items-center gap-1 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold px-2 py-1 rounded shadow-sm">
-                            <ZapIcon /> Energy: {generatedActivity.energy}/5
-                          </span>
-                          <span className="flex items-center gap-1 bg-white border border-gray-200 text-gray-600 text-[11px] font-bold px-2 py-1 rounded shadow-sm">
-                            <ClockIcon /> Prep: {generatedActivity.prep}/5
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Activity Body */}
-                      <div className="p-6 sm:p-8 space-y-8">
-
-                        {/* 1-on-1 Adaptation Note */}
-                        {classSize === 1 && generatedActivity.isTwoPlayer && (
-                          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
-                            <div className="bg-orange-100 p-2 rounded-full mt-0.5">
-                              <UsersIcon className="w-5 h-5 text-orange-600" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-black text-orange-800">1-on-1 Class Adaptation</h4>
-                              <p className="text-xs font-bold text-orange-700 mt-1">
-                                This is normally a multiplayer activity. Because your class size is set to 1, the teacher will actively participate and act as the student's partner.
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Objective & Materials */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
-                              <TargetIcon /> Learning Objective
-                            </h3>
-                            <p className="text-gray-700 font-medium leading-relaxed">{generatedActivity.objective}</p>
-                            <div className="mt-2 flex flex-wrap gap-1">
-                               {generatedActivity.targets && generatedActivity.targets.map(t => (
-                                  <span key={t} className="text-[9px] bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded uppercase">{t}</span>
-                               ))}
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
-                              <BoxIcon /> Materials Needed
-                            </h3>
-                            <ul className="space-y-1">
-                              {generatedActivity.materials && generatedActivity.materials.map(m => (
-                                <li key={m} className="text-gray-700 font-medium flex items-center gap-2 before:content-[''] before:w-1.5 before:h-1.5 before:bg-blue-400 before:rounded-full">{m}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-
-                        {/* Curriculum Integration Block */}
-                        {generatedActivity.curriculumData && (
-                          <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm">
-                             <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-3 flex items-center gap-2">
-                               <BookOpenIcon /> Integration: {generatedActivity.curriculumData.course} - {generatedActivity.curriculumData.unit}
-                             </h3>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                               <div>
-                                 <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Target Vocabulary</span>
-                                 <p className="text-sm text-gray-800 font-bold">{generatedActivity.curriculumData.vocab}</p>
-                               </div>
-                               <div>
-                                 <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Target Structure</span>
-                                 <p className="text-sm text-gray-800 font-bold">{generatedActivity.curriculumData.structure}</p>
-                               </div>
-                             </div>
-                          </div>
-                        )}
-
-                        <hr className="border-gray-100" />
-
-                        {/* Setup & Rules */}
-                        <div>
-                          <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <DiceIcon /> Setup & Rules
-                          </h3>
-                          <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                            <h4 className="font-bold text-gray-800 mb-1 text-sm">Room Setup:</h4>
-                            <p className="text-gray-700 font-medium text-sm mb-4">{generatedActivity.setup}</p>
-                            
-                            <h4 className="font-bold text-gray-800 mb-2 text-sm">How to Play:</h4>
-                            <ol className="space-y-2 list-decimal list-inside">
-                              {generatedActivity.rules && generatedActivity.rules.map((rule, idx) => (
-                                <li key={idx} className="text-gray-700 font-medium text-sm leading-relaxed">{rule}</li>
-                              ))}
-                            </ol>
-                          </div>
-                        </div>
-
-                        {/* Scripts */}
-                        <div>
-                          <h3 className="text-sm font-black text-[#1E88E5] uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <BookOpenIcon /> Interaction Script
-                          </h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="border-l-4 border-blue-400 pl-4 py-1">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Teacher Model</p>
-                              <p className="text-gray-800 font-black italic">"{generatedActivity.teacherScript ? generatedActivity.teacherScript.replace(/"/g, '') : ''}"</p>
-                            </div>
-                            <div className="border-l-4 border-green-400 pl-4 py-1">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Student Target Response</p>
-                              <p className="text-gray-800 font-black italic">"{generatedActivity.studentScript ? generatedActivity.studentScript.replace(/"/g, '') : ''}"</p>
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-                    </div>
+                    <ActivityCard activity={generatedActivity} currentClassSize={classSize} />
                   ) : null}
                 </div>
               </div>
             )}
 
-            {/* TAB 2: ACTIVITY MAKER */}
-            {activeTab === 'maker' && (
+            {/* TAB 2: CREATE */}
+            {activeTab === 'create' && (
               <div className="flex flex-col gap-6">
                 <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 shadow-sm">
                   <h2 className="text-xl font-black text-[#1E88E5] mb-2">Curriculum Injection Cheat Sheet</h2>
@@ -1788,7 +1796,7 @@
                 <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-6 md:p-8">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
-                      <PlusCircleIcon /> Add Activity to Database
+                      <PlusCircleIcon /> Add Activity to Library
                     </h2>
                     <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors cursor-pointer shadow-sm whitespace-nowrap">
                       <UploadIcon />
@@ -1801,28 +1809,28 @@
               </div>
             )}
 
-            {/* TAB 3: REPOSITORY */}
-            {activeTab === 'repository' && (
+            {/* TAB 3: LIBRARY */}
+            {activeTab === 'library' && (
               <div className="flex flex-col gap-6">
                 
-                {/* Repository Controls */}
+                {/* Library Controls */}
                 <div className="bg-white p-4 sm:p-6 border-b border-gray-200 shadow-sm rounded-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                   <div className="flex items-center gap-3">
                     <DatabaseIcon />
                     <div>
-                      <h2 className="text-xl font-bold text-gray-800">Database Management</h2>
-                      <p className="text-sm font-medium text-gray-500">{repository.length} Total Activities</p>
+                      <h2 className="text-xl font-bold text-gray-800">Library Management</h2>
+                      <p className="text-sm font-medium text-gray-500">{library.length} Activities in Library</p>
                     </div>
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors cursor-pointer shadow-sm">
                       <UploadIcon />
-                      Import DB
+                      Import Library
                       <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                     </label>
                     <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm">
-                      <DownloadIcon /> Export DB
+                      <DownloadIcon /> Export Library
                     </button>
                     <button onClick={handleRestore} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors shadow-sm ml-2" title="Restore back to the default ABC Garden activities.">
                       <RefreshIcon /> Restore Defaults
@@ -1830,7 +1838,7 @@
                   </div>
                 </div>
 
-                {/* Repository Table */}
+                {/* Library Table */}
                 <div className="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden">
                   <div className="bg-gray-50 border-b border-gray-200 p-4">
                     <div className="relative w-full max-w-md">
@@ -1858,20 +1866,20 @@
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredRepository.length > 0 ? (
-                          filteredRepository.map(act => (
+                        {filteredLibrary.length > 0 ? (
+                          filteredLibrary.map(act => (
                             <tr key={act.id} className="hover:bg-gray-50 border-b border-gray-100 transition-colors">
-                              <td className="p-4">
-                                <div className="text-base font-black text-gray-800">{act.name} {act.isTwoPlayer && <UsersIcon className="inline w-3 h-3 text-orange-500 -mt-1 ml-1" title="Multiplayer game"/>}</div>
+                              <td className="p-4 cursor-pointer" onClick={() => setPreviewActivity(act)}>
+                                <div className="text-base font-black text-gray-800 hover:text-[#1E88E5] transition-colors">{act.name} {act.isTwoPlayer && <UsersIcon className="inline w-3 h-3 text-orange-500 -mt-1 ml-1" title="Multiplayer game"/>}</div>
                                 <div className="text-xs text-gray-500 mt-1 line-clamp-2 font-medium leading-relaxed">{act.objective}</div>
                               </td>
-                              <td className="p-4 text-center">
+                              <td className="p-4 text-center cursor-pointer" onClick={() => setPreviewActivity(act)}>
                                 <div className="flex flex-col items-center gap-1">
                                   <span className="text-[11px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded whitespace-nowrap"><ClockIcon className="inline w-3 h-3 mr-1"/>{act.minTime}-{act.maxTime}m</span>
                                   <span className="text-[11px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded whitespace-nowrap"><UsersIcon className="inline w-3 h-3 mr-1"/>{act.minStudents}-{act.maxStudents} St</span>
                                 </div>
                               </td>
-                              <td className="p-4">
+                              <td className="p-4 cursor-pointer" onClick={() => setPreviewActivity(act)}>
                                 <div className="flex flex-col items-center gap-2">
                                   <div className="flex items-center gap-2">
                                     <span className="text-[10px] font-black uppercase text-orange-600 bg-orange-50 border border-orange-200 px-1.5 rounded" title="Energy Level">E: {act.energy}</span>
@@ -1885,13 +1893,16 @@
                               </td>
                               <td className="p-4 text-center">
                                 <div className="flex justify-center items-center gap-1">
-                                  <button onClick={() => handleEditActivity(act)} className="p-2 text-gray-500 hover:text-[#1E88E5] hover:bg-blue-50 rounded-lg transition-colors" title="Edit Activity">
+                                  <button onClick={(e) => { e.stopPropagation(); setPreviewActivity(act); }} className="p-2 text-gray-500 hover:text-[#1E88E5] hover:bg-blue-50 rounded-lg transition-colors" title="Preview Activity">
+                                    <EyeIcon />
+                                  </button>
+                                  <button onClick={(e) => handleEditActivity(e, act)} className="p-2 text-gray-500 hover:text-[#1E88E5] hover:bg-blue-50 rounded-lg transition-colors" title="Edit Activity">
                                     <EditIcon />
                                   </button>
-                                  <button onClick={() => handleExportSingle(act)} className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Export Single Activity JSON">
+                                  <button onClick={(e) => handleExportSingle(e, act)} className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Export Single Activity JSON">
                                     <DownloadIcon />
                                   </button>
-                                  <button onClick={() => removeActivity(act.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Activity">
+                                  <button onClick={(e) => handleRemoveActivity(e, act.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Activity">
                                     <Trash2Icon />
                                   </button>
                                 </div>
@@ -1913,6 +1924,18 @@
             )}
 
           </div>
+
+          {/* --- PREVIEW MODAL --- */}
+          {previewActivity && (
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex justify-center items-center p-4 sm:p-8 z-[60] modal-enter backdrop-blur-sm">
+              <div className="bg-transparent w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col relative">
+                <button onClick={() => setPreviewActivity(null)} className="absolute top-4 right-4 p-2 bg-white/80 hover:bg-white text-gray-800 rounded-full transition-colors z-10 shadow"><XIcon /></button>
+                <div className="overflow-y-auto w-full h-full p-1 scrollbar-hide">
+                  <ActivityCard activity={previewActivity} currentClassSize={classSize} />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* --- EDIT MODAL --- */}
           {editingActivityId && (
