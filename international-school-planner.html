@@ -151,7 +151,8 @@
       { id: 'b32', title: 'One fish two fish red fish blue fish', author: 'Dr. Seuss', targetLevel: 'general', targetUnit: 0, tags: ['Colors', 'Numbers', 'Opposites'], description: 'A whimsical exploration of colors, numbers, and imaginative creatures.', goal: 'Reinforce colors, counting, and simple descriptive words.' },
       { id: 'b33', title: 'Shh! We Have a Plan', author: 'Chris Haughton', targetLevel: 'level1', targetUnit: 6, tags: ['Colors', 'Night', 'Birds'], description: 'Three hunters try to sneak up on a beautiful bird, while the youngest tries to just say hello.', goal: 'Discuss colors (blue palette), shapes, and the concept of gentle interaction vs capturing.' },
       { id: 'b34', title: 'Bam and Kero Go Shopping', author: 'Yuka Shimada', targetLevel: 'level3', targetUnit: 4, tags: ['Neighborhood', 'Shopping'], description: 'A dog and a frog visit an outdoor market on a Wednesday to buy supplies.', goal: 'Learn vocabulary related to shops, markets, and items found in a neighborhood.' },
-      { id: 'b35', title: 'Music Under the Sea', author: 'Baby Einstein', targetLevel: 'level3', targetUnit: 8, tags: ['Music', 'Ocean'], description: 'Ocean animals play different musical instruments.', goal: 'Identify musical instruments (piano, drum, etc.) and explore the concept of making music.' }
+      { id: 'b35', title: 'Music Under the Sea', author: 'Baby Einstein', targetLevel: 'level3', targetUnit: 8, tags: ['Music', 'Ocean'], description: 'Ocean animals play different musical instruments.', goal: 'Identify musical instruments (piano, drum, etc.) and explore the concept of making music.' },
+      { id: 'b36', title: 'The Very Hungry Caterpillar', author: 'Eric Carle', targetLevel: 'level1', targetUnit: 9, tags: ['Food', 'Days of the Week', 'Numbers'], description: 'A small, hungry caterpillar eats his way through the days of the week and a variety of foods before transforming into a butterfly.', goal: 'Learn basic food vocabulary and practice counting items as the caterpillar eats them.' }
     ];
 
     const App = () => {
@@ -165,6 +166,17 @@
         const saved = localStorage.getItem('abc_hello_books');
         return saved ? JSON.parse(saved) : initialBooks;
       });
+
+      // Sync new books from initialBooks if they aren't in the saved state yet
+      useEffect(() => {
+        setBooks(prevBooks => {
+          const newBooks = initialBooks.filter(ib => !prevBooks.some(pb => pb.id === ib.id));
+          if (newBooks.length > 0) {
+            return [...prevBooks, ...newBooks];
+          }
+          return prevBooks;
+        });
+      }, []);
 
       const [roster, setRoster] = useState(() => {
         const saved = localStorage.getItem('abc_hello_roster');
