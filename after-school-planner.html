@@ -801,12 +801,12 @@
                    <h2 className="text-xl font-bold text-gray-800">Student Roster & Weekly Schedule</h2>
                    <div className="flex flex-wrap items-center gap-2">
                       <label className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-md text-sm font-bold hover:bg-blue-50 transition-colors cursor-pointer shadow-sm">
-                        <DownloadIcon className="w-4 h-4" />
+                        <UploadIcon className="w-4 h-4" />
                         Import
                         <input type="file" accept=".json" onChange={handleImportRoster} className="hidden" />
                       </label>
                       <button onClick={handleExportRoster} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-md text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm">
-                        <UploadIcon className="w-4 h-4" />
+                        <DownloadIcon className="w-4 h-4" />
                         Export
                       </button>
                       <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-[#1E88E5] text-white rounded-md text-sm font-bold hover:bg-blue-600 shadow-sm transition-colors ml-2">
