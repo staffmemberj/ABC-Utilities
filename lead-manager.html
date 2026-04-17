@@ -74,6 +74,16 @@
         flex-direction: column !important;
       }
 
+      /* Add page breaks between profiles when printing all */
+      .print-page-break {
+        page-break-after: always;
+        break-after: page;
+      }
+      .print-page-break:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
       /* Flex utility to force the "Notes" section to stretch */
       .print-flex-1 {
         flex: 1 1 0% !important;
@@ -138,7 +148,7 @@
       });
       const [formData, setFormData] = useState({ ...emptyProfile });
       const [editingId, setEditingId] = useState(null);
-      const [viewingProfile, setViewingProfile] = useState(null);
+      const [profilesToPrint, setProfilesToPrint] = useState(null); // Array of profiles to print, or null
       const [searchQuery, setSearchQuery] = useState('');
       const [logoError, setLogoError] = useState(false);
       const shouldPrintRef = useRef(true);
@@ -180,8 +190,8 @@
         setFormData({ ...emptyProfile });
         
         if (shouldPrintRef.current) {
-          // Immediately open the print modal if "Save & Print" was clicked
-          setViewingProfile(savedProfile);
+          // Immediately open the print modal for the single profile
+          setProfilesToPrint([savedProfile]);
         }
 
         // Reset default behavior
@@ -506,6 +516,11 @@
                     <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-[#1E88E5] border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm">
                       <UploadIcon /> Export
                     </button>
+                    {filteredProfiles.length > 0 && (
+                      <button onClick={() => setProfilesToPrint(filteredProfiles)} className="flex items-center gap-2 px-4 py-2 bg-[#1E88E5] text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition-colors shadow-sm">
+                        <PrinterIcon /> Print All
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -524,7 +539,7 @@
                         {filteredProfiles.length > 0 ? (
                           filteredProfiles.map(profile => (
                             <tr key={profile.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="p-4 cursor-pointer" onClick={() => setViewingProfile(profile)}>
+                              <td className="p-4 cursor-pointer" onClick={() => setProfilesToPrint([profile])}>
                                 <div className="font-black text-gray-800 text-base">{profile.parentName || '-'}</div>
                                 <div className="text-sm font-bold text-[#1E88E5] mt-0.5">Child: {profile.childNameAge || '-'}</div>
                                 <div className="text-xs text-gray-500 font-medium mt-1 flex flex-col">
@@ -532,7 +547,7 @@
                                   <span>{profile.phone}</span>
                                 </div>
                               </td>
-                              <td className="p-4 cursor-pointer align-top" onClick={() => setViewingProfile(profile)}>
+                              <td className="p-4 cursor-pointer align-top" onClick={() => setProfilesToPrint([profile])}>
                                 <div className="flex flex-col gap-1.5 items-start">
                                   {profile.trialDate && (
                                     <span className="text-xs font-bold text-gray-600 flex items-center gap-1">
@@ -545,7 +560,7 @@
                                   {profile.ward && <span className="text-xs text-gray-500">Ward: {profile.ward}</span>}
                                 </div>
                               </td>
-                              <td className="p-4 hidden md:table-cell align-top cursor-pointer" onClick={() => setViewingProfile(profile)}>
+                              <td className="p-4 hidden md:table-cell align-top cursor-pointer" onClick={() => setProfilesToPrint([profile])}>
                                 <div className="flex flex-col gap-1.5">
                                   <span className="text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded inline-block w-max uppercase tracking-wider">
                                     Source: {profile.source === 'その他' && profile.sourceOther ? `その他 (${profile.sourceOther})` : (profile.source || 'Unknown')}
@@ -557,7 +572,7 @@
                               </td>
                               <td className="p-4 text-center align-middle">
                                 <div className="flex justify-center items-center gap-1">
-                                  <button onClick={() => setViewingProfile(profile)} className="p-2 text-gray-500 hover:text-[#1E88E5] hover:bg-blue-50 rounded-lg transition-colors" title="View & Print Profile">
+                                  <button onClick={() => setProfilesToPrint([profile])} className="p-2 text-gray-500 hover:text-[#1E88E5] hover:bg-blue-50 rounded-lg transition-colors" title="View & Print Profile">
                                     <PrinterIcon />
                                   </button>
                                   <button onClick={() => handleEdit(profile)} className="p-2 text-gray-500 hover:text-[#1E88E5] hover:bg-blue-50 rounded-lg transition-colors" title="Edit Profile">
@@ -585,9 +600,9 @@
             )}
           </div>
 
-          {/* --- PRINT MODAL / VIEW PROFILE --- */}
-          {viewingProfile && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-gray-900/60 backdrop-blur-sm modal-enter modal-backdrop-print" onClick={() => setViewingProfile(null)}>
+          {/* --- PRINT MODAL / VIEW PROFILE(S) --- */}
+          {profilesToPrint && profilesToPrint.length > 0 && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-gray-900/60 backdrop-blur-sm modal-enter modal-backdrop-print" onClick={() => setProfilesToPrint(null)}>
               
               {/* Modal Container (Stretches full height in print) */}
               <div 
@@ -597,159 +612,168 @@
                 {/* Print/Close Action Bar (Hidden in Print) */}
                 <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center no-print shrink-0">
                   <h2 className="font-black text-gray-800 flex items-center gap-2">
-                    <FileTextIcon /> Profile View
+                    <FileTextIcon /> 
+                    {profilesToPrint.length > 1 ? `Print Profiles (${profilesToPrint.length})` : 'Profile View'}
                   </h2>
                   <div className="flex items-center gap-3">
                     <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-[#1E88E5] text-white font-bold rounded-lg hover:bg-blue-600 transition shadow-sm text-sm">
-                      <PrinterIcon className="w-4 h-4" /> Print A4 Profile
+                      <PrinterIcon className="w-4 h-4" /> 
+                      {profilesToPrint.length > 1 ? 'Print All (A4)' : 'Print A4 Profile'}
                     </button>
-                    <button onClick={() => setViewingProfile(null)} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors">
+                    <button onClick={() => setProfilesToPrint(null)} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors">
                       <XIcon />
                     </button>
                   </div>
                 </div>
 
-                {/* Printable Content Area (Uses print-a4-page flex structure) */}
-                <div className="p-8 sm:p-12 overflow-y-auto bg-white print:p-0 print:overflow-visible print-a4-page">
+                {/* Printable Content Area (Scrolls in UI, expands in print) */}
+                <div className="p-8 sm:p-12 overflow-y-auto bg-white print:p-0 print:overflow-visible">
                   
-                  {/* Print Header (Fixed height) */}
-                  <div className="flex justify-between items-end border-b-2 border-gray-800 print-border-b pb-4 mb-6 print:mb-4 shrink-0">
-                    <div>
-                      <h1 className="text-3xl font-black text-gray-900 print-text-black tracking-tight">Lead Profile</h1>
-                      <p className="text-sm font-bold text-gray-500 print-text-black mt-1">ABC Garden • Created: {formatDate(viewingProfile.dateCreated)}</p>
-                    </div>
-                  </div>
+                  {profilesToPrint.map((profile, index) => (
+                    <div 
+                      key={profile.id || index} 
+                      className={`print-a4-page print-page-break ${index < profilesToPrint.length - 1 ? 'mb-16 border-b-8 border-gray-200 pb-16 print:border-0 print:mb-0 print:pb-0' : ''}`}
+                    >
+                      {/* Print Header (Fixed height) */}
+                      <div className="flex justify-between items-end border-b-2 border-gray-800 print-border-b pb-4 mb-6 print:mb-4 shrink-0">
+                        <div>
+                          <h1 className="text-3xl font-black text-gray-900 print-text-black tracking-tight">Lead Profile</h1>
+                          <p className="text-sm font-bold text-gray-500 print-text-black mt-1">ABC Garden • Created: {formatDate(profile.dateCreated)}</p>
+                        </div>
+                      </div>
 
-                  {/* Profile Data Table / Grid - Takes remaining space */}
-                  <div className="border-2 border-gray-800 print-border flex flex-col text-sm print:text-[13px] print-text-black print-flex-1">
-                    
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        氏名 (Parent Name)
-                      </div>
-                      <div className="w-2/3 p-3 font-black text-lg">
-                        {viewingProfile.parentName || '-'}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        お子さまのお名前・年齢 (Child Name & Age)
-                      </div>
-                      <div className="w-2/3 p-3 font-black text-lg text-[#1E88E5] print-text-black">
-                        {viewingProfile.childNameAge || '-'}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        メールアドレス (Email)
-                      </div>
-                      <div className="w-2/3 p-3 font-bold break-all">
-                        {viewingProfile.email || '-'}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        電話番号 (Phone Number)
-                      </div>
-                      <div className="w-2/3 p-3 font-bold">
-                        {viewingProfile.phone || '-'}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        連絡方法 (Contact Method)
-                      </div>
-                      <div className="w-2/3 p-3 font-bold">
-                        {viewingProfile.contactMethod || '-'}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        希望体験日 (Trial Date)
-                      </div>
-                      <div className="w-2/3 p-3 font-black text-gray-900">
-                        {viewingProfile.trialDate || '-'}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        希望プログラム (Program)
-                      </div>
-                      <div className="w-2/3 p-3 font-black text-gray-900">
-                        {viewingProfile.program || '-'}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        希望セッション (Session)
-                      </div>
-                      <div className="w-2/3 p-3 font-black text-gray-900">
-                        {viewingProfile.session || '-'}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        お住まいの区 (Ward)
-                      </div>
-                      <div className="w-2/3 p-3 font-bold">
-                        {viewingProfile.ward || '-'}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
-                        情報源 (Source)
-                      </div>
-                      <div className="w-2/3 p-3 font-bold">
-                        {viewingProfile.source === 'その他' && viewingProfile.sourceOther 
-                          ? `その他 (${viewingProfile.sourceOther})` 
-                          : (viewingProfile.source || '-')}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r">
-                        知りたい内容 (Interests)
-                      </div>
-                      <div className="w-2/3 p-3 font-medium whitespace-pre-wrap min-h-[40px]">
-                        {viewingProfile.interests}
-                      </div>
-                    </div>
-
-                    <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r">
-                        ご希望やご質問 (Requests/Questions)
-                      </div>
-                      <div className="w-2/3 p-3 font-medium whitespace-pre-wrap min-h-[40px]">
-                        {viewingProfile.requests}
-                      </div>
-                    </div>
-
-                    {/* Final Flex-Grow Notes Section */}
-                    <div className="flex flex-1 print-flex-1">
-                      <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r">
-                        その他 (Internal Notes)
-                      </div>
-                      <div className="w-2/3 p-3 font-medium whitespace-pre-wrap h-full flex flex-col min-h-[100px]">
-                        <div className="text-gray-800 flex-1">{viewingProfile.notes}</div>
-                        {/* Subtle instruction text visible only on screen, hidden on print */}
-                        {!viewingProfile.notes && (
-                          <div className="text-gray-300 italic text-sm no-print mt-auto">
-                            (This box will automatically expand to fill the bottom of the A4 page when printed, leaving room for handwritten notes.)
+                      {/* Profile Data Table / Grid - Takes remaining space */}
+                      <div className="border-2 border-gray-800 print-border flex flex-col text-sm print:text-[13px] print-text-black print-flex-1">
+                        
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            氏名 (Parent Name)
                           </div>
-                        )}
+                          <div className="w-2/3 p-3 font-black text-lg">
+                            {profile.parentName || '-'}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            お子さまのお名前・年齢 (Child Name & Age)
+                          </div>
+                          <div className="w-2/3 p-3 font-black text-lg text-[#1E88E5] print-text-black">
+                            {profile.childNameAge || '-'}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            メールアドレス (Email)
+                      </div>
+                          <div className="w-2/3 p-3 font-bold break-all">
+                            {profile.email || '-'}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            電話番号 (Phone Number)
+                          </div>
+                          <div className="w-2/3 p-3 font-bold">
+                            {profile.phone || '-'}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            連絡方法 (Contact Method)
+                          </div>
+                          <div className="w-2/3 p-3 font-bold">
+                            {profile.contactMethod || '-'}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            希望体験日 (Trial Date)
+                          </div>
+                          <div className="w-2/3 p-3 font-black text-gray-900">
+                            {profile.trialDate || '-'}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            希望プログラム (Program)
+                          </div>
+                          <div className="w-2/3 p-3 font-black text-gray-900">
+                            {profile.program || '-'}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            希望セッション (Session)
+                          </div>
+                          <div className="w-2/3 p-3 font-black text-gray-900">
+                            {profile.session || '-'}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            お住まいの区 (Ward)
+                          </div>
+                          <div className="w-2/3 p-3 font-bold">
+                            {profile.ward || '-'}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r flex items-center">
+                            情報源 (Source)
+                          </div>
+                          <div className="w-2/3 p-3 font-bold">
+                            {profile.source === 'その他' && profile.sourceOther 
+                              ? `その他 (${profile.sourceOther})` 
+                              : (profile.source || '-')}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r">
+                            知りたい内容 (Interests)
+                          </div>
+                          <div className="w-2/3 p-3 font-medium whitespace-pre-wrap min-h-[40px]">
+                            {profile.interests}
+                          </div>
+                        </div>
+
+                        <div className="flex border-b-2 border-gray-800 print-border-b shrink-0">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r">
+                            ご希望やご質問 (Requests/Questions)
+                          </div>
+                          <div className="w-2/3 p-3 font-medium whitespace-pre-wrap min-h-[40px]">
+                            {profile.requests}
+                          </div>
+                        </div>
+
+                        {/* Final Flex-Grow Notes Section */}
+                        <div className="flex flex-1 print-flex-1">
+                          <div className="w-1/3 bg-gray-100 print-bg-gray p-3 font-bold border-r-2 border-gray-800 print-border-r">
+                            その他 (Internal Notes)
+                          </div>
+                          <div className="w-2/3 p-3 font-medium whitespace-pre-wrap h-full flex flex-col min-h-[100px]">
+                            <div className="text-gray-800 flex-1">{profile.notes}</div>
+                            {/* Subtle instruction text visible only on screen, hidden on print */}
+                            {!profile.notes && (
+                              <div className="text-gray-300 italic text-sm no-print mt-auto">
+                                (This box will automatically expand to fill the bottom of the A4 page when printed, leaving room for handwritten notes.)
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
                       </div>
                     </div>
-
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
