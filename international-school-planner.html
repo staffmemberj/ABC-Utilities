@@ -478,21 +478,24 @@
           )}
 
           {/* Header */}
-          <div className="max-w-6xl mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4 no-print">
+          <div className="max-w-6xl mx-auto mb-6 flex flex-col md:flex-row justify-between items-center gap-4 no-print border-b-2 border-gray-200 pb-6">
             <div>
               <div className="flex items-center gap-3">
-                <img 
-                  src="abc-horizontal-block-tilted-mono.png" 
-                  alt="ABC Garden Logo" 
-                  className="h-12 w-auto object-contain"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'block';
-                  }}
-                />
-                <h1 className="text-3xl font-black hidden text-gray-800">ABC Garden</h1>
+                <a href="index.html" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                  <img 
+                    src="abc-horizontal-block-tilted-mono.png" 
+                    alt="ABC Garden Logo" 
+                    className="h-12 w-auto object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
+                  />
+                  <h1 className="text-3xl font-black hidden text-gray-800">ABC Garden</h1>
+                </a>
+                <span className="text-2xl font-black text-gray-800 border-l-2 border-gray-200 pl-3 ml-1 hidden sm:block">Hello Meeting Planner</span>
               </div>
-              <p className="text-gray-500 font-bold ml-1 mt-1">Hello Meeting Smart Planner (9:00 - 9:30 AM)</p>
+              <p className="text-gray-500 font-bold ml-1 mt-1">Smart Lesson & Routine Builder (9:00 - 9:30 AM)</p>
             </div>
             <div className="flex items-center gap-4">
               {activeTab === 'planner' && (
