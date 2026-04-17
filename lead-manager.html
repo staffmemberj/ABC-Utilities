@@ -139,6 +139,7 @@
       const [editingId, setEditingId] = useState(null);
       const [viewingProfile, setViewingProfile] = useState(null);
       const [searchQuery, setSearchQuery] = useState('');
+      const [logoError, setLogoError] = useState(false);
       const shouldPrintRef = useRef(true);
 
       useEffect(() => {
@@ -273,9 +274,12 @@
                     src="abc-horizontal-block-tilted-mono.png" 
                     alt="ABC Garden Logo" 
                     className="h-12 w-auto object-contain"
-                    onError={(e) => { e.target.style.display = 'none'; }}
+                    onError={(e) => { 
+                      e.target.style.display = 'none'; 
+                      setLogoError(true);
+                    }}
                   />
-                  <h1 className="text-3xl font-black text-gray-800">ABC Garden</h1>
+                  {logoError && <h1 className="text-3xl font-black text-gray-800">ABC Garden</h1>}
                 </div>
                 <p className="text-gray-500 font-bold ml-1 mt-1">Lead Profile Management System</p>
               </div>
