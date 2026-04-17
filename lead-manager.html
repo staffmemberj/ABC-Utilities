@@ -172,7 +172,6 @@
       const [filterWard, setFilterWard] = useState('');
       const [filterSource, setFilterSource] = useState('');
 
-      const [logoError, setLogoError] = useState(false);
       const shouldPrintRef = useRef(true);
 
       useEffect(() => {
@@ -349,21 +348,24 @@
           <div className="max-w-6xl mx-auto flex flex-col gap-6 no-print">
             
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+            <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-2 border-gray-200 pb-6">
               <div>
                 <div className="flex items-center gap-3">
-                  <img 
-                    src="abc-horizontal-block-tilted-mono.png" 
-                    alt="ABC Garden Logo" 
-                    className="h-12 w-auto object-contain"
-                    onError={(e) => { 
-                      e.target.style.display = 'none'; 
-                      setLogoError(true);
-                    }}
-                  />
-                  {logoError && <h1 className="text-3xl font-black text-gray-800">ABC Garden</h1>}
+                  <a href="index.html" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <img 
+                      src="abc-horizontal-block-tilted-mono.png" 
+                      alt="ABC Garden Logo" 
+                      className="h-12 w-auto object-contain"
+                      onError={(e) => { 
+                        e.target.style.display = 'none'; 
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                    <h1 className="text-3xl font-black hidden text-gray-800">ABC Garden</h1>
+                  </a>
+                  <span className="text-2xl font-black text-gray-800 border-l-2 border-gray-200 pl-3 ml-1 hidden sm:block">Lead Manager</span>
                 </div>
-                <p className="text-gray-500 font-bold ml-1 mt-1">Lead Profile Management System</p>
+                <p className="text-gray-500 font-bold ml-1 mt-2 sm:mt-1">Lead Profile Management System</p>
               </div>
             </div>
 

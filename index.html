@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABC Garden - Staff Portal</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #FAF8F5; /* ABC Garden warm off-white */
+      color: #1f2937;
+    }
+    
+    .hover-lift {
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8 relative">
+
+  <div class="max-w-6xl mx-auto flex flex-col gap-8">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-2 border-gray-200 pb-6">
+      <div>
+        <div class="flex items-center gap-3">
+          <img 
+            src="abc-horizontal-block-tilted-mono.png" 
+            alt="ABC Garden Logo" 
+            class="h-12 w-auto object-contain"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+          />
+          <h1 class="text-3xl font-black text-gray-800 hidden" style="display: none;">ABC Garden</h1>
+          <span class="text-2xl font-black text-gray-800 border-l-2 border-gray-200 pl-3 ml-1 hidden sm:block">Staff Portal</span>
+        </div>
+        <p class="text-gray-500 font-bold ml-1 mt-2">Internal Tools & Dashboard</p>
+      </div>
+      <div class="text-sm font-bold text-gray-400 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
+        <span id="current-date"></span>
+      </div>
+    </div>
+
+    <!-- Category 1: Academic & Lesson Planning -->
+    <section>
+      <div class="flex items-center gap-2 mb-4">
+        <div class="bg-blue-100 p-1.5 rounded-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E88E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+        <h2 class="text-xl font-black text-gray-800 tracking-tight">Academic & Lesson Planning</h2>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- After School Planner -->
+        <a href="after-school-planner.html" class="block bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover-lift group h-full flex flex-col outline-none focus:ring-4 focus:ring-blue-100 border-b-4 border-b-transparent hover:border-b-[#1E88E5]">
+          <div class="flex justify-between items-start mb-4">
+            <div class="bg-blue-50 text-[#1E88E5] p-3 rounded-xl group-hover:bg-[#1E88E5] group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-1 rounded">Daily Use</span>
+          </div>
+          <h3 class="text-xl font-black text-gray-800 mb-2 leading-tight">After-School Planner</h3>
+          <p class="text-sm font-medium text-gray-500 flex-grow">Generate structured lesson plans and track weekly targets for Fun & Step English programs.</p>
+          <div class="mt-4 flex items-center gap-1 text-sm font-bold text-[#1E88E5] group-hover:translate-x-1 transition-transform">
+            Launch Planner <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+
+        <!-- International School Planner -->
+        <a href="international-school-planner.html" class="block bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover-lift group h-full flex flex-col outline-none focus:ring-4 focus:ring-blue-100 border-b-4 border-b-transparent hover:border-b-[#1E88E5]">
+          <div class="flex justify-between items-start mb-4">
+            <div class="bg-amber-50 text-amber-500 p-3 rounded-xl group-hover:bg-amber-400 group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-1 rounded">Daily Use</span>
+          </div>
+          <h3 class="text-xl font-black text-gray-800 mb-2 leading-tight">Hello Meeting Planner</h3>
+          <p class="text-sm font-medium text-gray-500 flex-grow">Map out curriculum themes, select storybooks, and generate the morning routine for the International School.</p>
+          <div class="mt-4 flex items-center gap-1 text-sm font-bold text-amber-500 group-hover:translate-x-1 transition-transform">
+            Launch Planner <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+
+        <!-- Activity Engine -->
+        <a href="game-gen.html" class="block bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover-lift group h-full flex flex-col outline-none focus:ring-4 focus:ring-blue-100 border-b-4 border-b-transparent hover:border-b-[#1E88E5]">
+          <div class="flex justify-between items-start mb-4">
+            <div class="bg-purple-50 text-purple-500 p-3 rounded-xl group-hover:bg-purple-500 group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-1 rounded">Tool</span>
+          </div>
+          <h3 class="text-xl font-black text-gray-800 mb-2 leading-tight">Activity Engine</h3>
+          <p class="text-sm font-medium text-gray-500 flex-grow">Search the database and auto-generate activities tailored to class size, duration, and target curriculum.</p>
+          <div class="mt-4 flex items-center gap-1 text-sm font-bold text-purple-500 group-hover:translate-x-1 transition-transform">
+            Open Generator <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Category 2: Administration -->
+    <section>
+      <div class="flex items-center gap-2 mb-4">
+        <div class="bg-green-100 p-1.5 rounded-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43A047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h2 class="text-xl font-black text-gray-800 tracking-tight">Administration</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Lead Manager -->
+        <a href="lead-manager.html" class="block bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover-lift group h-full flex flex-col outline-none focus:ring-4 focus:ring-green-100 border-b-4 border-b-transparent hover:border-b-[#43A047]">
+          <div class="flex justify-between items-start mb-4">
+            <div class="bg-green-50 text-[#43A047] p-3 rounded-xl group-hover:bg-[#43A047] group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-1 rounded">Internal</span>
+          </div>
+          <h3 class="text-xl font-black text-gray-800 mb-2 leading-tight">Lead Manager</h3>
+          <p class="text-sm font-medium text-gray-500 flex-grow">Log, track, and print detailed lead profiles for prospective students inquiring about programs.</p>
+          <div class="mt-4 flex items-center gap-1 text-sm font-bold text-[#43A047] group-hover:translate-x-1 transition-transform">
+            Manage Leads <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Category 3: Operations & Resources -->
+    <section>
+      <div class="flex items-center gap-2 mb-4">
+        <div class="bg-rose-100 p-1.5 rounded-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        </div>
+        <h2 class="text-xl font-black text-gray-800 tracking-tight">Operations & Resources</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Attendance Sheet -->
+        <a href="attendance-sheet.html" class="block bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover-lift group h-full flex flex-col outline-none focus:ring-4 focus:ring-rose-100 border-b-4 border-b-transparent hover:border-b-[#E53935]">
+          <div class="flex justify-between items-start mb-4">
+            <div class="bg-rose-50 text-[#E53935] p-3 rounded-xl group-hover:bg-[#E53935] group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-1 rounded">Printout</span>
+          </div>
+          <h3 class="text-xl font-black text-gray-800 mb-2 leading-tight">Attendance Generator</h3>
+          <p class="text-sm font-medium text-gray-500 flex-grow">Create printable, customizable A4 grids for monthly class attendance and outside safety checks.</p>
+          <div class="mt-4 flex items-center gap-1 text-sm font-bold text-[#E53935] group-hover:translate-x-1 transition-transform">
+            Print Sheets <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+
+        <!-- Cleaning Checklist -->
+        <a href="cleaning-checklist.html" class="block bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover-lift group h-full flex flex-col outline-none focus:ring-4 focus:ring-rose-100 border-b-4 border-b-transparent hover:border-b-[#E53935]">
+          <div class="flex justify-between items-start mb-4">
+            <div class="bg-gray-100 text-gray-600 p-3 rounded-xl group-hover:bg-slate-700 group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-1 rounded">Printout</span>
+          </div>
+          <h3 class="text-xl font-black text-gray-800 mb-2 leading-tight">Cleaning Checklist</h3>
+          <p class="text-sm font-medium text-gray-500 flex-grow">A rigid A4 printable checklist to keep track of daily and weekly cleaning tasks across the school.</p>
+          <div class="mt-4 flex items-center gap-1 text-sm font-bold text-gray-600 group-hover:text-slate-700 group-hover:translate-x-1 transition-transform">
+            View Checklist <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="mt-8 border-t border-gray-200 pt-6 pb-12 flex items-center justify-between">
+      <p class="text-sm font-bold text-gray-400">ABC Garden Internal System</p>
+      <div class="flex gap-4">
+        <span class="w-2 h-2 rounded-full bg-[#1E88E5]"></span>
+        <span class="w-2 h-2 rounded-full bg-[#E53935]"></span>
+        <span class="w-2 h-2 rounded-full bg-[#FBC02D]"></span>
+        <span class="w-2 h-2 rounded-full bg-[#43A047]"></span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // Set the current date in the header
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', dateOptions);
+  </script>
+</body>
+</html>
